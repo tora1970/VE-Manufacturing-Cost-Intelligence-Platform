@@ -11,12 +11,12 @@ class TechnologyEngine:
 
             if rule["Operator"] == "<":
 
-                if volume < rule["Value"]:
+                if volume < rule["Value"\]:
                     technology = rule["Recommended Technology"]
 
             elif rule["Operator"] == ">=":
 
-                if volume >= rule["Value"]:
+                if volume >= rule["Value"\]:
                     technology = rule["Recommended Technology"]
 
         return technology
