@@ -41,6 +41,8 @@ material = st.selectbox(
 
 if st.button("Recommend Technology"):
 
-   technology = engine.recommend(volume)
-    st.success(f"Recommended Technology: {technology}")
+    technology = engine.recommend(volume)
 
+    st.success(
+        f"Recommended Technology: {technology}"
+    )
