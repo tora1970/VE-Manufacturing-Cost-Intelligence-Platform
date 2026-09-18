@@ -34,14 +34,6 @@ material = st.selectbox(
 
 if st.button("Recommend Technology"):
 
-    if volume < 500:
-        technology = "MJF"
-
-    elif volume < 5000:
-        technology = "CNC"
-
-    else:
-        technology = "HPDC"
-
+   technology = engine.recommend(volume)
     st.success(f"Recommended Technology: {technology}")
 
