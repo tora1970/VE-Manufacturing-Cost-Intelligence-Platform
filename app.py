@@ -1,8 +1,15 @@
 import streamlit as st
+
 from utils.loader import MasterDataLoader
-rules = masterdata["technology_rules"]
-engine = TechnologyEngine(rules)
 from engine.technology_engine import TechnologyEngine
+
+loader = MasterDataLoader()
+
+masterdata = loader.load_all()
+
+rules = masterdata["technology_rules"]
+
+engine = TechnologyEngine(rules)
 
 st.set_page_config(
     page_title="VE Manufacturing Cost Intelligence Platform",
