@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 class TechnologyEngine:
 
     def __init__(self, rules_df):
@@ -14,12 +11,12 @@ class TechnologyEngine:
 
             if rule["Operator"] == "<":
 
-                if volume < rule["Value"\]:
+                if volume < rule["Value"]:
                     technology = rule["Recommended Technology"]
 
             elif rule["Operator"] == ">=":
 
-                if volume >= rule["Value"\]:
+                if volume >= rule["Value"]:
                     technology = rule["Recommended Technology"]
 
         return technology
