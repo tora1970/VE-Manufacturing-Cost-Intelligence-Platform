@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 class TechnologyEngine:
 
     def __init__(self, rules_df):
