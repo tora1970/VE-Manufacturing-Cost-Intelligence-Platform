@@ -214,57 +214,63 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # ------------------------------------------
-        # Cost Breakdown Chart
-        # ------------------------------------------
+# ------------------------------------------
+# Cost Breakdown Chart
+# ------------------------------------------
 
-        st.subheader("Cost Breakdown by Technology")
+import altair as alt
 
-        chart_df = cost_df[
-            [
-                "Technology",
-                "Material Cost EUR",
-                "Machine Cost EUR",
-                "Labour Cost EUR",
-                "Overhead Cost EUR",
-                "Tooling Cost EUR"
-            ]
-        ].copy()
+st.subheader("Cost Breakdown by Technology")
 
-        chart_df = pd.melt(
-            chart_df,
-            id_vars=["Technology"],
-            var_name="Cost Element",
-            value_name="Cost"
-        )
+chart_df = cost_df[
+    [
+        "Technology",
+        "Material Cost EUR",
+        "Machine Cost EUR",
+        "Labour Cost EUR",
+        "Overhead Cost EUR",
+        "Tooling Cost EUR"
+    ]
+].copy()
 
-        chart = (
-            alt.Chart(chart_df)
-            .mark_bar()
-            .encode(
-                y=alt.Y(
-                    "Technology:N",
-                    sort="-x",
-                    title=None
-                ),
-                x=alt.X(
-                    "sum(Cost):Q",
-                    title="Cost (EUR/pc)"
-                ),
-                color=alt.Color(
-                    "Cost Element:N"
-                )
+# Konverter til long format
+
+chart_df = pd.melt(
+    chart_df,
+    id_vars=["Technology"],
+    var_name="Cost Element",
+    value_name="Cost"
+)
+
+chart = (
+    alt.Chart(chart_df)
+    .mark_bar()
+    .encode(
+        y=alt.Y(
+            "Technology:N",
+            title=None,
+            sort="-x"
+        ),
+        x=alt.X(
+            "sum(Cost):Q",
+            title="Cost (EUR/pc)"
+        ),
+        color=alt.Color(
+            "Cost Element:N",
+            legend=alt.Legend(
+                orient="bottom"
             )
-            .properties(
-                height=250
-            )
         )
+    )
+    .properties(
+        height=300
+    )
+)
 
-        st.altair_chart(
-            chart,
-            use_container_width=True
-        )
-
+st.altair_chart(
+    chart,
+    use_container_width=True
+)
         # ------------------------------------------
         # Best Option
         # ------------------------------------------
