@@ -231,9 +231,39 @@ if st.button("Recommend Technology"):
             ]
         ].copy()
 
-        chart_df = chart_df.set_index("Technology")
+        chart_df = pd.melt(
+            chart_df,
+            id_vars=["Technology"],
+            var_name="Cost Element",
+            value_name="Cost"
+        )
 
-        st.bar_chart(chart_df)
+        chart = (
+            alt.Chart(chart_df)
+            .mark_bar()
+            .encode(
+                y=alt.Y(
+                    "Technology:N",
+                    sort="-x",
+                    title=None
+                ),
+                x=alt.X(
+                    "sum(Cost):Q",
+                    title="Cost (EUR/pc)"
+                ),
+                color=alt.Color(
+                    "Cost Element:N"
+                )
+            )
+            .properties(
+                height=250
+            )
+        )
+
+        st.altair_chart(
+            chart,
+            use_container_width=True
+        )
 
         # ------------------------------------------
         # Best Option
