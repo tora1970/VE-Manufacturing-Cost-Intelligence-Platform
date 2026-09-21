@@ -30,7 +30,7 @@ class CostEngine:
         process = process.iloc[0]
 
         # ---------------------------------
-        # Input data
+        # Inputs
         # ---------------------------------
 
         machine_rate = float(
@@ -41,16 +41,29 @@ class CostEngine:
             process["Setup_Hours"]
         )
 
-        tool_cost = float(
+        cycle_time_sec = float(
+            process["Cycle_Time_sec"]
+        )
+
+        scrap_rate = float(
+            process["Scrap_Rate"]
+        )
+
+        tooling_cost_eur = float(
             process["Tooling_Cost_EUR"]
         )
 
-        tool_life = float(
+        tool_life_pcs = float(
             process["Tool_Life_Pcs"]
         )
 
-        project_life = float(
+        project_life_years = float(
             process["Project_Life_Years"]
+        )
+
+        annual_volume = max(
+            annual_volume,
+            1
         )
 
         # ---------------------------------
@@ -58,17 +71,14 @@ class CostEngine:
         # ---------------------------------
 
         material_cost = (
-            weight * material_price
+            weight
+            * material_price
+            * (1 + scrap_rate)
         )
 
         # ---------------------------------
-        # Setup Cost per Piece
+        # Setup Cost
         # ---------------------------------
-
-        annual_volume = max(
-            annual_volume,
-            1
-        )
 
         machine_setup_cost = (
             machine_rate
@@ -83,64 +93,103 @@ class CostEngine:
         )
 
         # ---------------------------------
-        # Overhead
+        # Cycle Cost
         # ---------------------------------
 
-        # Hvis Regions.xlsx indeholder
-        # 1.20 = 20 %
-        # 1.50 = 50 %
+        machine_cycle_cost = (
+            machine_rate
+            * cycle_time_sec
+            / 3600
+        )
 
-        overhead_cost = (
-            machine_setup_cost
-            + labour_setup_cost
-        ) * (
-            overhead_factor - 1
+        labour_cycle_cost = (
+            labour_rate
+            * cycle_time_sec
+            / 3600
         )
 
         # ---------------------------------
-        # Tooling
+        # Tooling Cost
         # ---------------------------------
 
         tooling_cost = 0
 
         if (
-            tool_cost > 0
-            and project_life > 0
-            and tool_life > 0
+            tooling_cost_eur > 0
+            and tool_life_pcs > 0
+            and project_life_years > 0
         ):
 
             lifetime_volume = (
                 annual_volume
-                * project_life
+                * project_life_years
             )
 
             amortization_volume = min(
                 lifetime_volume,
-                tool_life
+                tool_life_pcs
             )
 
             tooling_cost = (
-                tool_cost
+                tooling_cost_eur
                 / amortization_volume
             )
 
         # ---------------------------------
-        # Total Cost
+        # Overhead
         # ---------------------------------
+
+        direct_cost = (
+            machine_setup_cost
+            + labour_setup_cost
+            + machine_cycle_cost
+            + labour_cycle_cost
+        )
+
+        overhead_cost = (
+            direct_cost
+            * (overhead_factor - 1)
+        )
+
+        # ---------------------------------
+        # Totals
+        # ---------------------------------
+
+        machine_cost = (
+            machine_setup_cost
+            + machine_cycle_cost
+        )
+
+        labour_cost = (
+            labour_setup_cost
+            + labour_cycle_cost
+        )
 
         total_cost = (
             material_cost
-            + machine_setup_cost
-            + labour_setup_cost
+            + machine_cost
+            + labour_cost
             + overhead_cost
             + tooling_cost
         )
 
         return {
-            "Material Cost": round(material_cost, 2),
-            "Machine Cost": round(machine_setup_cost, 2),
-            "Labour Cost": round(labour_setup_cost, 2),
-            "Overhead Cost": round(overhead_cost, 2),
-            "Tooling Cost": round(tooling_cost, 2),
-            "Total Cost": round(total_cost, 2)
+
+            "Material Cost":
+                round(material_cost, 2),
+
+            "Machine Cost":
+                round(machine_cost, 2),
+
+            "Labour Cost":
+                round(labour_cost, 2),
+
+            "Overhead Cost":
+                round(overhead_cost, 2),
+
+            "Tooling Cost":
+                round(tooling_cost, 2),
+
+            "Total Cost":
+                round(total_cost, 2)
         }
