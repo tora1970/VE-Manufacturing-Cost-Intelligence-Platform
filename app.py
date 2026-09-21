@@ -162,7 +162,7 @@ if st.button("Recommend Technology"):
 
         top_technologies = recommendations.head(3)
 
-        for _, row in top_technologies.iterrows():
+for _, row in top_technologies.iterrows():
 
     cost = cost_engine.calculate_cost(
         technology=row["Technology"],
@@ -183,7 +183,7 @@ if st.button("Recommend Technology"):
         }
     )
 
-        cost_df = pd.DataFrame(cost_results)
+cost_df = pd.DataFrame(cost_results)
 
         cost_df = cost_df.sort_values(
             by="Total Cost EUR/pc",
