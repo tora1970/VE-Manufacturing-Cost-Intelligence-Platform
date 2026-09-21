@@ -253,7 +253,7 @@ with st.expander("Debug Information"):
     st.write(list(masterdata.keys()))
 
     st.write("Technology Cost Library Columns:")
-   st.write(
+    st.write(
         technology_cost_df.columns.tolist()
     )
 
