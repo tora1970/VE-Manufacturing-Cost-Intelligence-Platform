@@ -14,7 +14,7 @@ class CostEngine:
         technology,
         weight,
         material_price,
-        annual_volume
+        annual_volume,
         labour_rate,
         overhead_factor
 ):
