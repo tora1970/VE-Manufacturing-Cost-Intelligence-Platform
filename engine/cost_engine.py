@@ -29,68 +29,117 @@ class CostEngine:
 
         process = process.iloc[0]
 
-        # Material
+        # ---------------------------------
+        # Input data
+        # ---------------------------------
+
+        machine_rate = float(
+            process["Machine_Rate_EUR_hr"]
+        )
+
+        setup_hours = float(
+            process["Setup_Hours"]
+        )
+
+        tool_cost = float(
+            process["Tooling_Cost_EUR"]
+        )
+
+        tool_life = float(
+            process["Tool_Life_Pcs"]
+        )
+
+        project_life = float(
+            process["Project_Life_Years"]
+        )
+
+        # ---------------------------------
+        # Material Cost
+        # ---------------------------------
 
         material_cost = (
             weight * material_price
         )
 
-        # Machine
+        # ---------------------------------
+        # Setup Cost per Piece
+        # ---------------------------------
 
-        machine_cost = (
-            process["Machine_Rate_EUR_hr"]
-            * process["Setup_Hours"]
+        annual_volume = max(
+            annual_volume,
+            1
         )
 
-        # Labour (fra region)
+        machine_setup_cost = (
+            machine_rate
+            * setup_hours
+            / annual_volume
+        )
 
-        labour_cost = (
+        labour_setup_cost = (
             labour_rate
-            * process["Setup_Hours"]
+            * setup_hours
+            / annual_volume
         )
 
-        # Overhead (fra region)
+        # ---------------------------------
+        # Overhead
+        # ---------------------------------
+
+        # Hvis Regions.xlsx indeholder
+        # 1.20 = 20 %
+        # 1.50 = 50 %
 
         overhead_cost = (
-            machine_cost + labour_cost
+            machine_setup_cost
+            + labour_setup_cost
         ) * (
             overhead_factor - 1
         )
 
+        # ---------------------------------
         # Tooling
+        # ---------------------------------
 
         tooling_cost = 0
 
         if (
-            process["Tooling_Cost_EUR"] > 0
-            and process["Project_Life_Years"] > 0
+            tool_cost > 0
+            and project_life > 0
+            and tool_life > 0
         ):
 
             lifetime_volume = (
                 annual_volume
-                * process["Project_Life_Years"]
+                * project_life
+            )
+
+            amortization_volume = min(
+                lifetime_volume,
+                tool_life
             )
 
             tooling_cost = (
-                process["Tooling_Cost_EUR"]
-                / min(
-                    lifetime_volume,
-                    process["Tool_Life_Pcs"]
-                )
+                tool_cost
+                / amortization_volume
             )
+
+        # ---------------------------------
+        # Total Cost
+        # ---------------------------------
 
         total_cost = (
             material_cost
-            + machine_cost
-            + labour_cost
+            + machine_setup_cost
+            + labour_setup_cost
             + overhead_cost
             + tooling_cost
         )
 
         return {
             "Material Cost": round(material_cost, 2),
-            "Machine Cost": round(machine_cost, 2),
-            "Labour Cost": round(labour_cost, 2),
+            "Machine Cost": round(machine_setup_cost, 2),
+            "Labour Cost": round(labour_setup_cost, 2),
             "Overhead Cost": round(overhead_cost, 2),
             "Tooling Cost": round(tooling_cost, 2),
             "Total Cost": round(total_cost, 2)
