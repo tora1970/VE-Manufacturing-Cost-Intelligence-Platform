@@ -182,4 +182,43 @@ if st.button("Recommend Technology"):
 
             cost = cost_engine.calculate_cost(
                 technology=row["Technology"],
-                weight
+                weight=part_weight,
+                material_price=material_price
+            )
+
+            cost_results.append(
+                {
+                    "Technology": row["Technology"],
+                    "Score": row["Score"],
+                    "Material Cost EUR": cost["Material Cost"],
+                    "Machine Cost EUR": cost["Machine Cost"],
+                    "Labour Cost EUR": cost["Labour Cost"],
+                    "Overhead Cost EUR": cost["Overhead Cost"],
+                    "Total Cost EUR/pc": cost["Total Cost"]
+                }
+            )
+
+        cost_df = pd.DataFrame(cost_results)
+
+        cost_df = cost_df.sort_values(
+            by="Total Cost EUR/pc",
+            ascending=True
+        )
+
+        st.dataframe(
+            cost_df,
+            use_container_width=True
+        )
+
+        # Best option
+
+        best_option = cost_df.iloc[0]
+
+        st.success(
+            f"""
+Best Technology Option: {best_option['Technology']}
+
+Estimated Manufacturing Cost:
+€ {best_option['Total Cost EUR/pc'\]:.2f}/pc
+"""
+        )
