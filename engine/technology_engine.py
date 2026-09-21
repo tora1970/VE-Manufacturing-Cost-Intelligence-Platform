@@ -4,22 +4,55 @@ import pandas as pd
 class TechnologyEngine:
 
     def __init__(self, rules_df):
-        self.rules = rules_df
+        self.rules_df = rules_df
 
-    def recommend(self, volume):
+    def recommend(
+        self,
+        weight,
+        volume,
+        material,
+        region=None,
+        complexity=None
+    ):
 
-        technology = "Unknown"
+        results = []
 
-        for _, rule in self.rules.iterrows():
+        for _, row in self.rules_df.iterrows():
 
-            if rule["Operator"] == "<":
+            score = row["Base_Score"]
 
-                if volume < rule["Value"]:
-                    technology = rule["Recommended Technology"]
+            if (
+                row["Min_Weight_kg"]
+                <= weight
+                <= row["Max_Weight_kg"]
+            ):
+                score += 30
 
-            elif rule["Operator"] == ">=":
+            if (
+                row["Min_Volume"]
+                <= volume
+                <= row["Max_Volume"]
+            ):
+                score += 30
 
-                if volume >= rule["Value"]:
-                    technology = rule["Recommended Technology"]
+            if (
+                str(row["Material_Group"]).lower()
+                in str(material).lower()
+            ):
+                score += 30
 
-        return technology
+            results.append(
+                {
+                    "Technology": row["Technology_Name"],
+                    "Score": score
+                }
+            )
+
+        result_df = pd.DataFrame(results)
+
+        result_df = result_df.sort_values(
+            "Score",
+            ascending=False
+        )
+
+        return result_df
