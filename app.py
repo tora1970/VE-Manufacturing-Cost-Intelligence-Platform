@@ -171,16 +171,17 @@ if st.button("Recommend Technology"):
             )
 
             cost_results.append(
-                {
-                    "Technology": row["Technology"],
-                    "Score": row["Score"],
-                    "Material Cost EUR": cost["Material Cost"],
-                    "Machine Cost EUR": cost["Machine Cost"],
-                    "Labour Cost EUR": cost["Labour Cost"],
-                    "Overhead Cost EUR": cost["Overhead Cost"],
-                    "Total Cost EUR/pc": cost["Total Cost"]
-                }
-            )
+    {
+        "Technology": row["Technology"],
+        "Score": row["Score"],
+        "Material Cost EUR": cost["Material Cost"],
+        "Machine Cost EUR": cost["Machine Cost"],
+        "Labour Cost EUR": cost["Labour Cost"],
+        "Overhead Cost EUR": cost["Overhead Cost"],
+        "Tooling Cost EUR": cost["Tooling Cost"],
+        "Total Cost EUR/pc": cost["Total Cost"]
+    }
+)
 
         cost_df = pd.DataFrame(cost_results)
 
