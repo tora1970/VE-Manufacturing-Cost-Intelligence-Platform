@@ -234,16 +234,18 @@ if st.button("Recommend Technology"):
 
         st.bar_chart(chart_df)
 
-                # ------------------------------------------
+        # ------------------------------------------
         # Best Option
         # ------------------------------------------
 
         best_option = cost_df.iloc[0]
 
+        best_technology = best_option["Technology"]
+        best_cost = best_option["Total Cost EUR/pc"]
+
         st.success(
-            f"Best Technology Option: {best_option['Technology']} | "
-            f"Estimated Manufacturing Cost: "
-            f"€ {best_option['Total Cost EUR/pc'\]:.2f}/pc"
+            f"Best Technology Option: {best_technology} | "
+            f"Estimated Manufacturing Cost: € {best_cost:.2f}/pc"
         )
 
     except Exception as e:
