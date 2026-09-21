@@ -52,6 +52,7 @@ with col2:
 
     region = st.selectbox(
         "Region",
+       st.write(masterdata["regions"].columns.tolist())
         masterdata["regions"]["Region_Name"]
     )
 
