@@ -16,7 +16,8 @@ class CostEngine:
         self,
         technology,
         weight,
-        material_price
+        material_price,
+        annual_volume
     ):
 
         process = self.df[
@@ -73,14 +74,29 @@ class CostEngine:
 
         tooling_cost = 0
 
-        if (
-            process["Tool_Life_Pcs"] > 0
-            and process["Tooling_Cost_EUR"] > 0
-        ):
-            tooling_cost = (
-                process["Tooling_Cost_EUR"]
-                / process["Tool_Life_Pcs"]
-            )
+tool_cost = process["Tooling_Cost_EUR"]
+tool_life = process["Tool_Life_Pcs"]
+project_life = process["Project_Life_Years"]
+
+if (
+    tool_cost > 0
+    and annual_volume > 0
+    and project_life > 0
+):
+
+    lifetime_volume = (
+        annual_volume
+        * project_life
+    )
+
+    tooling_cost = (
+        tool_cost
+        / min(
+            lifetime_volume,
+            tool_life
+        )
+    )
+`
 
         # -------------------------
         # Total Cost
