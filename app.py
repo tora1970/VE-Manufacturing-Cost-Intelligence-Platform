@@ -182,8 +182,6 @@ chart_df = cost_df[
     ]
 ].copy()
 
-)
-
 chart_df = chart_df.set_index("Technology")
 
 st.bar_chart(chart_df)
