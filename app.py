@@ -18,26 +18,45 @@ st.set_page_config(
 
 st.title("Technology Selection")
 
-weight = st.number_input(
-    "Part Weight (kg)",
-    min_value=0.001,
-    value=0.050
-)
+col1, col2 = st.columns(2)
 
-volume = st.number_input(
-    "Annual Volume",
-    min_value=1,
-    value=1000
-)
+with col1:
+    part_weight = st.number_input(
+        "Part Weight (kg)",
+        min_value=0.001,
+        value=0.05,
+        step=0.01
+    )
 
-material = st.selectbox(
-    "Material",
-    [
-        "Aluminium",
-        "Steel",
-        "Plastic"
-    ]
-)
+    annual_volume = st.number_input(
+        "Annual Volume (pcs/year)",
+        min_value=1,
+        value=1000,
+        step=100
+    )
+
+    material = st.selectbox(
+        "Material",
+        masterdata["Materials"]["Material_Name"]
+    )
+
+with col2:
+    material_price = st.number_input(
+        "Material Price (EUR/kg)",
+        min_value=0.0,
+        value=3.50,
+        step=0.10
+    )
+
+    region = st.selectbox(
+        "Region",
+        masterdata["Regions"]["Region_Name"]
+    )
+
+    complexity = st.selectbox(
+        "Part Complexity",
+        ["Low", "Medium", "High"]
+    )
 
 if st.button("Recommend Technology"):
 
