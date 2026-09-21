@@ -11,14 +11,14 @@ class CostEngine:
         )
 
     def calculate_cost(
-        self,
-        technology,
-        weight,
-        material_price,
-        annual_volume,
-        labour_rate,
-        overhead_factor
-    ):
+    self,
+    technology,
+    weight,
+    material_price,
+    annual_volume,
+    labour_rate,
+    overhead_factor
+):
 
         tech_row = self.cost_library[
             self.cost_library["Technology_Name"]
