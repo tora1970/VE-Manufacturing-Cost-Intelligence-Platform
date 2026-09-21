@@ -15,6 +15,9 @@ class CostEngine:
         weight,
         material_price,
         annual_volume
+        labour_rate,
+        overhead_factor
+):
     ):
 
         process = self.df[
@@ -50,7 +53,7 @@ class CostEngine:
         # -------------------------
 
         labour_cost = (
-            process["Labour_Rate_EUR_hr"]
+            labour_rate
             * process["Setup_Hours"]
         )
 
@@ -61,7 +64,7 @@ class CostEngine:
         overhead_cost = (
             machine_cost + labour_cost
         ) * (
-            process["Overhead_Factor"] - 1
+            overhead_factor - 1
         )
 
         # -------------------------
