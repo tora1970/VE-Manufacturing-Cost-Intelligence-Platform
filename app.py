@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from utils.loader import load_all
+from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
 from engine.cost_engine import CostEngine
 
@@ -24,7 +24,9 @@ st.title("VE Manufacturing Cost Intelligence Platform")
 
 try:
 
-    masterdata = load_all()
+    loader = MasterDataLoader()
+
+    masterdata = loader.load_all()
 
     materials_df = masterdata["materials"]
     regions_df = masterdata["regions"]
