@@ -121,7 +121,7 @@ overhead_factor = float(
 )
 
 # --------------------------------------------------
-# Input Summary
+# Selected Inputs
 # --------------------------------------------------
 
 st.divider()
@@ -143,7 +143,7 @@ with c4:
     st.metric("Labour Rate", f"€ {labour_rate:.2f}/hr")
 
 # --------------------------------------------------
-# Calculation
+# Run Evaluation
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
@@ -166,27 +166,9 @@ if st.button("Recommend Technology"):
         )
 
         # ------------------------------------------
-        # Cost Breakdown Chart
+        # Cost Calculation
         # ------------------------------------------
 
-        st.subheader("Cost Breakdown by Technology")
-
-        chart_df = cost_df[
-            [
-                "Technology",
-                "Material Cost EUR",
-                "Machine Cost EUR",
-                "Labour Cost EUR",
-                "Overhead Cost EUR",
-                "Tooling Cost EUR"
-            ]
-        ].copy()
-
-        chart_df = chart_df.set_index("Technology")
-
-        st.bar_chart(chart_df)
-
-        
         cost_results = []
 
         for _, row in recommendations.head(3).iterrows():
@@ -220,12 +202,41 @@ if st.button("Recommend Technology"):
             ascending=True
         )
 
+        # ------------------------------------------
+        # Cost Table
+        # ------------------------------------------
+
         st.subheader("Technology Cost Comparison")
 
         st.dataframe(
             cost_df,
             use_container_width=True
         )
+
+        # ------------------------------------------
+        # Cost Breakdown Chart
+        # ------------------------------------------
+
+        st.subheader("Cost Breakdown by Technology")
+
+        chart_df = cost_df[
+            [
+                "Technology",
+                "Material Cost EUR",
+                "Machine Cost EUR",
+                "Labour Cost EUR",
+                "Overhead Cost EUR",
+                "Tooling Cost EUR"
+            ]
+        ].copy()
+
+        chart_df = chart_df.set_index("Technology")
+
+        st.bar_chart(chart_df)
+
+        # ------------------------------------------
+        # Best Option
+        # ------------------------------------------
 
         best_option = cost_df.iloc[0]
 
