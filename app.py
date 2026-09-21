@@ -115,16 +115,25 @@ st.subheader("Selected Inputs")
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric("Weight", f"{part_weight:.3f} kg")
+    st.metric(
+        "Weight",
+        f"{part_weight:.3f} kg"
+    )
 
 with c2:
-    st.metric("Volume", f"{annual_volume:,.0f} pcs/year")
+    st.metric(
+        "Volume",
+        f"{annual_volume:,.0f} pcs/year"
+    )
 
 with c3:
-    st.metric("Material Price", f"€ {material_price:.2f}/kg")
+    st.metric(
+        "Material Price",
+        f"€ {material_price:.2f}/kg"
+    )
 
 # --------------------------------------------------
-# Run Technology Recommendation
+# Technology Recommendation
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
@@ -162,28 +171,28 @@ if st.button("Recommend Technology"):
 
         top_technologies = recommendations.head(3)
 
-for _, row in top_technologies.iterrows():
+        for _, row in top_technologies.iterrows():
 
-    cost = cost_engine.calculate_cost(
-        technology=row["Technology"],
-        weight=part_weight,
-        material_price=material_price
-    )
+            cost = cost_engine.calculate_cost(
+                technology=row["Technology"],
+                weight=part_weight,
+                material_price=material_price
+            )
 
-    cost_results.append(
-        {
-            "Technology": row["Technology"],
-            "Score": row["Score"],
-            "Material Cost EUR": cost["Material Cost"],
-            "Machine Cost EUR": cost["Machine Cost"],
-            "Labour Cost EUR": cost["Labour Cost"],
-            "Overhead Cost EUR": cost["Overhead Cost"],
-            "Tooling Cost EUR": cost["Tooling Cost"],
-            "Total Cost EUR/pc": cost["Total Cost"]
-        }
-    )
+            cost_results.append(
+                {
+                    "Technology": row["Technology"],
+                    "Score": row["Score"],
+                    "Material Cost EUR": cost["Material Cost"],
+                    "Machine Cost EUR": cost["Machine Cost"],
+                    "Labour Cost EUR": cost["Labour Cost"],
+                    "Overhead Cost EUR": cost["Overhead Cost"],
+                    "Tooling Cost EUR": cost["Tooling Cost"],
+                    "Total Cost EUR/pc": cost["Total Cost"]
+                }
+            )
 
-cost_df = pd.DataFrame(cost_results)
+        cost_df = pd.DataFrame(cost_results)
 
         cost_df = cost_df.sort_values(
             by="Total Cost EUR/pc",
@@ -217,7 +226,7 @@ Estimated Manufacturing Cost:
         )
 
 # --------------------------------------------------
-# Debug Section
+# Debug Information
 # --------------------------------------------------
 
 with st.expander("Debug Information"):
