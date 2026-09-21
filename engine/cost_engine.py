@@ -4,7 +4,13 @@ import pandas as pd
 class CostEngine:
 
     def __init__(self, process_cost_df):
-        self.process_cost_df = process_cost_df
+
+        self.process_cost_df = process_cost_df.copy()
+
+        self.process_cost_df.columns = (
+            self.process_cost_df.columns
+            .str.strip()
+        )
 
     def calculate_cost(
         self,
@@ -14,13 +20,11 @@ class CostEngine:
     ):
 
         process = self.process_cost_df[
-            self.process_cost_df["Technology_Name"]
-            == technology
+            self.process_cost_df["Technology"] == technology
         ].iloc[0]
 
         material_cost = (
-            weight
-            * material_price
+            weight * material_price
         )
 
         machine_cost = (
@@ -36,8 +40,7 @@ class CostEngine:
         )
 
         overhead_cost = (
-            machine_cost
-            + labour_cost
+            machine_cost + labour_cost
         ) * (
             process["Overhead_Factor"] - 1
         )
