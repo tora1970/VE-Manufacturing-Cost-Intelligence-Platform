@@ -7,10 +7,7 @@ class CostEngine:
 
         self.df = technology_cost_df.copy()
 
-        self.df.columns = (
-            self.df.columns
-            .str.strip()
-        )
+        self.df.columns = self.df.columns.str.strip()
 
     def calculate_cost(
         self,
@@ -58,45 +55,33 @@ class CostEngine:
         )
 
         # -------------------------
-        # Overhead
+        # Overhead Cost
         # -------------------------
 
         overhead_cost = (
-            machine_cost
-            + labour_cost
+            machine_cost + labour_cost
         ) * (
             process["Overhead_Factor"] - 1
         )
 
         # -------------------------
-        # Tooling
+        # Tooling Cost
         # -------------------------
 
         tooling_cost = 0
 
-tool_cost = process["Tooling_Cost_EUR"]
-tool_life = process["Tool_Life_Pcs"]
-project_life = process["Project_Life_Years"]
+        tool_cost = process["Tooling_Cost_EUR"]
+        tool_life = process["Tool_Life_Pcs"]
 
-if (
-    tool_cost > 0
-    and annual_volume > 0
-    and project_life > 0
-):
-
-    lifetime_volume = (
-        annual_volume
-        * project_life
-    )
-
-    tooling_cost = (
-        tool_cost
-        / min(
-            lifetime_volume,
-            tool_life
-        )
-    )
-`
+        if (
+            pd.notna(tool_cost)
+            and pd.notna(tool_life)
+            and tool_cost > 0
+            and tool_life > 0
+        ):
+            tooling_cost = (
+                tool_cost / tool_life
+            )
 
         # -------------------------
         # Total Cost
