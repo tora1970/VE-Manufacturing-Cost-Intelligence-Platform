@@ -176,7 +176,7 @@ if st.button("Recommend Technology"):
             cost = cost_engine.calculate_cost(
                 technology=row["Technology"],
                 weight=part_weight,
-                material_price=material_price
+                material_price=material_price,
                 annual_volume=annual_volume
             )
 
