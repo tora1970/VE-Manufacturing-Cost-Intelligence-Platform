@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import matplotlib.pyplot as plt
 
 from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
@@ -213,9 +214,9 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # ------------------------------------------
-        # Cost Breakdown Chart
-        # ------------------------------------------
+# ------------------------------------------
+# Cost Breakdown Chart
+# ------------------------------------------
 
         st.subheader("Cost Breakdown by Technology")
 
