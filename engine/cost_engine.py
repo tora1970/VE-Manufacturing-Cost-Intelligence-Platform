@@ -6,7 +6,6 @@ class CostEngine:
     def __init__(self, technology_cost_df):
 
         self.df = technology_cost_df.copy()
-
         self.df.columns = self.df.columns.str.strip()
 
     def calculate_cost(
@@ -17,7 +16,7 @@ class CostEngine:
         annual_volume,
         labour_rate,
         overhead_factor
-):
+    ):
 
         process = self.df[
             self.df["Technology_Name"] == technology
@@ -25,40 +24,32 @@ class CostEngine:
 
         if process.empty:
             raise ValueError(
-                f"Technology not found in Technology Cost Library: {technology}"
+                f"Technology not found: {technology}"
             )
 
         process = process.iloc[0]
 
-        # -------------------------
-        # Material Cost
-        # -------------------------
+        # Material
 
         material_cost = (
             weight * material_price
         )
 
-        # -------------------------
-        # Machine Cost
-        # -------------------------
+        # Machine
 
         machine_cost = (
             process["Machine_Rate_EUR_hr"]
             * process["Setup_Hours"]
         )
 
-        # -------------------------
-        # Labour Cost
-        # -------------------------
+        # Labour (fra region)
 
         labour_cost = (
             labour_rate
             * process["Setup_Hours"]
         )
 
-        # -------------------------
-        # Overhead Cost
-        # -------------------------
+        # Overhead (fra region)
 
         overhead_cost = (
             machine_cost + labour_cost
@@ -66,28 +57,27 @@ class CostEngine:
             overhead_factor - 1
         )
 
-        # -------------------------
-        # Tooling Cost
-        # -------------------------
+        # Tooling
 
         tooling_cost = 0
 
-        tool_cost = process["Tooling_Cost_EUR"]
-        tool_life = process["Tool_Life_Pcs"]
-
         if (
-            pd.notna(tool_cost)
-            and pd.notna(tool_life)
-            and tool_cost > 0
-            and tool_life > 0
+            process["Tooling_Cost_EUR"] > 0
+            and process["Project_Life_Years"] > 0
         ):
-            tooling_cost = (
-                tool_cost / tool_life
+
+            lifetime_volume = (
+                annual_volume
+                * process["Project_Life_Years"]
             )
 
-        # -------------------------
-        # Total Cost
-        # -------------------------
+            tooling_cost = (
+                process["Tooling_Cost_EUR"]
+                / min(
+                    lifetime_volume,
+                    process["Tool_Life_Pcs"]
+                )
+            )
 
         total_cost = (
             material_cost
