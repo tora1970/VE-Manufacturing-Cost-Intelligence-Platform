@@ -213,29 +213,26 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-# ------------------------------------------
-# Cost Breakdown Chart
-# ------------------------------------------
+        # ------------------------------------------
+        # Cost Breakdown Chart
+        # ------------------------------------------
 
-st.subheader("Cost Breakdown by Technology")
+        st.subheader("Cost Breakdown by Technology")
 
-chart_df = cost_df[
-    [
-        "Technology",
-        "Material Cost EUR",
-        "Machine Cost EUR",
-        "Labour Cost EUR",
-        "Overhead Cost EUR",
-        "Tooling Cost EUR"
-    ]
-].copy()
+        chart_df = cost_df[
+            [
+                "Technology",
+                "Material Cost EUR",
+                "Machine Cost EUR",
+                "Labour Cost EUR",
+                "Overhead Cost EUR",
+                "Tooling Cost EUR"
+            ]
+        ].copy()
 
-chart_df = chart_df.set_index("Technology")
+        chart_df = chart_df.set_index("Technology")
 
-st.bar_chart(
-    chart_df,
-    horizontal=True
-)
+        st.bar_chart(chart_df)
 
         # ------------------------------------------
         # Best Option
@@ -246,7 +243,7 @@ st.bar_chart(
         st.success(
             f"Best Technology Option: {best_option['Technology']} | "
             f"Estimated Manufacturing Cost: "
-            f"€ {best_option['Total Cost EUR/pc']:.2f}/pc"
+            f"€ {best_option['Total Cost EUR/pc'\]:.2f}/pc"
         )
 
     except Exception as e:
