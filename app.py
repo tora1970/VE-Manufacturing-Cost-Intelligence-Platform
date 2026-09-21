@@ -17,6 +17,7 @@ st.set_page_config(
 
 st.title("VE Manufacturing Cost Intelligence Platform")
 st.subheader("Technology Selection")
+)
 
 # --------------------------------------------------
 # LOAD MASTER DATA
