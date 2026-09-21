@@ -36,7 +36,7 @@ rules_df.columns = rules_df.columns.str.strip()
 technology_cost_df.columns = technology_cost_df.columns.str.strip()
 
 # --------------------------------------------------
-# Engines
+# Initialize Engines
 # --------------------------------------------------
 
 technology_engine = TechnologyEngine(rules_df)
@@ -101,7 +101,11 @@ with col2:
 
     complexity = st.selectbox(
         "Part Complexity",
-        ["Low", "Medium", "High"]
+        [
+            "Low",
+            "Medium",
+            "High"
+        ]
     )
 
 # --------------------------------------------------
@@ -121,7 +125,7 @@ overhead_factor = float(
 )
 
 # --------------------------------------------------
-# Selected Inputs
+# Input Summary
 # --------------------------------------------------
 
 st.divider()
@@ -138,8 +142,8 @@ with c1:
 
 with c2:
     st.metric(
-        "Volume",
-        f"{annual_volume:,.0f} pcs/year"
+        "Annual Volume",
+        f"{annual_volume:,.0f}"
     )
 
 with c3:
@@ -229,17 +233,15 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # ------------------------------------------
-        # Best Option
-        # ------------------------------------------
-
         best_option = cost_df.iloc[0]
 
         st.success(
-            f"""Best Technology Option: {best_option['Technology']}
+            f"""
+Best Technology Option: {best_option['Technology']}
 
 Estimated Manufacturing Cost:
-€ {best_option['Total Cost EUR/pc']:.2f}/pc"""
+€ {best_option['Total Cost EUR/pc']:.2f}/pc
+"""
         )
 
     except Exception as e:
@@ -267,4 +269,14 @@ with st.expander("Debug Information"):
     st.write(
         "Regions Columns:",
         regions_df.columns.tolist()
+    )
+
+    st.write(
+        "Materials Columns:",
+        materials_df.columns.tolist()
+    )
+
+    st.write(
+        "Technology Rules Columns:",
+        rules_df.columns.tolist()
     )
