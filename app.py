@@ -165,6 +165,27 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
+# ------------------------------------------
+# Cost Breakdown Chart
+# ------------------------------------------
+
+st.subheader("Cost Breakdown by Technology")
+
+chart_df = cost_df[
+    [
+        "Technology",
+        "Material Cost EUR",
+        "Machine Cost EUR",
+        "Labour Cost EUR",
+        "Overhead Cost EUR",
+        "Tooling Cost EUR"
+    ]
+].copy()
+
+chart_df = chart_df.set_index("Technology")
+
+st.bar_chart(chart_df)
+        
         cost_results = []
 
         for _, row in recommendations.head(3).iterrows():
