@@ -7,6 +7,8 @@ loader = MasterDataLoader()
 
 masterdata = loader.load_all()
 
+st.write(masterdata.keys())
+
 rules = masterdata["technology_rules"]
 
 engine = TechnologyEngine(rules)
