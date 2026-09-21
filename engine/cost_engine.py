@@ -18,7 +18,6 @@ class CostEngine:
         labour_rate,
         overhead_factor
 ):
-    ):
 
         process = self.df[
             self.df["Technology_Name"] == technology
