@@ -192,6 +192,8 @@ if st.button("Recommend Technology"):
                     "Labour Cost EUR": cost["Labour Cost"],
                     "Overhead Cost EUR": cost["Overhead Cost"],
                     "Tooling Cost EUR": cost["Tooling Cost"],
+                    "Setup Cost EUR": cost["Setup Cost"],
+                    "Cycle Cost EUR": cost["Cycle Cost"],
                     "Total Cost EUR/pc": cost["Total Cost"]
                 }
             )
