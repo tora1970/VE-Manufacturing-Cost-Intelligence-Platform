@@ -174,22 +174,25 @@ class CostEngine:
         )
 
         return {
+            "Material Cost": round(material_cost, 2),
 
-            "Material Cost":
-                round(material_cost, 2),
+            "Setup Cost": round(
+                machine_setup_cost + labour_setup_cost,
+                2
+            ),
 
-            "Machine Cost":
-                round(machine_cost, 2),
+            "Cycle Cost": round(
+                machine_cycle_cost + labour_cycle_cost,
+                2
+            ),
 
-            "Labour Cost":
-                round(labour_cost, 2),
+            "Machine Cost": round(machine_cost, 2),
 
-            "Overhead Cost":
-                round(overhead_cost, 2),
+            "Labour Cost": round(labour_cost, 2),
 
-            "Tooling Cost":
-                round(tooling_cost, 2),
+            "Overhead Cost": round(overhead_cost, 2),
 
-            "Total Cost":
-                round(total_cost, 2)
+            "Tooling Cost": round(tooling_cost, 2),
+
+            "Total Cost": round(total_cost, 2)
         }
