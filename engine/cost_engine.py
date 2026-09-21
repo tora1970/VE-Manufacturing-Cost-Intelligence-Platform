@@ -9,55 +9,50 @@ class CostEngine:
     def calculate_cost(
         self,
         technology,
-        weight_kg,
-        material_price_eur_kg,
-        annual_volume
+        weight,
+        material_price,
+        annual_volume,
+        labour_rate=None,
+        overhead_factor=None
     ):
 
-        # ------------------------------------------
-        # Find Technology
-        # ------------------------------------------
-
         tech_row = self.cost_library[
-            self.cost_library["Technology_ID"].astype(str).str.strip()
+            self.cost_library["Technology_Name"]
+            .astype(str)
+            .str.strip()
             == str(technology).strip()
         ]
 
         if tech_row.empty:
 
             tech_row = self.cost_library[
-                self.cost_library["Technology_Name"].astype(str).str.strip()
+                self.cost_library["Technology_ID"]
+                .astype(str)
+                .str.strip()
                 == str(technology).strip()
             ]
 
         if tech_row.empty:
 
-            available = self.cost_library[
-                "Technology_ID"
-            ].tolist()
-
             raise ValueError(
-                f"Technology '{technology}' not found. "
-                f"Available technologies: {available}"
+                f"Technology '{technology}' not found"
             )
 
         tech_row = tech_row.iloc[0]
-
-        # ------------------------------------------
-        # Read Cost Data
-        # ------------------------------------------
 
         machine_rate = float(
             tech_row["Machine_Rate_EUR_hr"]
         )
 
-        labour_rate = float(
-            tech_row["Labour_Rate_EUR_hr"]
-        )
+        if labour_rate is None:
+            labour_rate = float(
+                tech_row["Labour_Rate_EUR_hr"]
+            )
 
-        overhead_factor = float(
-            tech_row["Overhead_Factor"]
-        )
+        if overhead_factor is None:
+            overhead_factor = float(
+                tech_row["Overhead_Factor"]
+            )
 
         setup_hours = float(
             tech_row["Setup_Hours"]
@@ -71,40 +66,20 @@ class CostEngine:
             tech_row["Tool_Life_Pcs"]
         )
 
-        # ------------------------------------------
-        # Material Cost
-        # ------------------------------------------
-
         material_cost = (
-            weight_kg *
-            material_price_eur_kg
+            weight *
+            material_price
         )
 
-        # ------------------------------------------
-        # Cycle Time Assumptions
-        # Minutes per Piece
-        # ------------------------------------------
-
         cycle_time_lookup = {
-
             "CNC Machining": 2.0,
-
             "Die Casting": 0.2,
-
             "HP Multi Jet Fusion": 5.0,
-
             "Investment Casting": 1.0,
-
             "Sand Casting": 0.8,
-
             "Injection Moulding": 0.1,
-
-            # Alternate IDs
-
             "CNC": 2.0,
-
             "HP MJF": 5.0
-
         }
 
         cycle_time_minutes = cycle_time_lookup.get(
@@ -116,27 +91,15 @@ class CostEngine:
             cycle_time_minutes / 60
         )
 
-        # ------------------------------------------
-        # Machine Cost
-        # ------------------------------------------
-
         machine_cost = (
             cycle_time_hours *
             machine_rate
         )
 
-        # ------------------------------------------
-        # Labour Cost
-        # ------------------------------------------
-
         labour_cost = (
             cycle_time_hours *
             labour_rate
         )
-
-        # ------------------------------------------
-        # Setup Cost Allocation
-        # ------------------------------------------
 
         setup_cost = 0
 
@@ -152,10 +115,6 @@ class CostEngine:
                 annual_volume
             )
 
-        # ------------------------------------------
-        # Tooling Cost Allocation
-        # ------------------------------------------
-
         tooling_cost_per_piece = 0
 
         if tool_life > 0:
@@ -165,28 +124,16 @@ class CostEngine:
                 tool_life
             )
 
-        # ------------------------------------------
-        # Direct Cost
-        # ------------------------------------------
-
         direct_cost = (
             material_cost
             + machine_cost
             + labour_cost
         )
 
-        # ------------------------------------------
-        # Overhead
-        # ------------------------------------------
-
         overhead_cost = (
             direct_cost *
             (overhead_factor - 1)
         )
-
-        # ------------------------------------------
-        # Total Cost
-        # ------------------------------------------
 
         total_cost = (
             material_cost
@@ -197,24 +144,6 @@ class CostEngine:
             + tooling_cost_per_piece
         )
 
-        # ------------------------------------------
-        # Return Results
-        # ------------------------------------------
-
         return {
-
             "Technology": technology,
-
-            "Material Cost EUR":
-                round(material_cost, 2),
-
-            "Machine Cost EUR":
-                round(machine_cost, 2),
-
-            "Labour Cost EUR":
-                round(labour_cost, 2),
-
-            "Overhead Cost EUR":
-                round(overhead_cost, 2),
-
-    
+            "Material Cost EUR": round(material
