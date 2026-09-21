@@ -7,7 +7,7 @@ from engine.technology_engine import TechnologyEngine
 from engine.cost_engine import CostEngine
 
 # --------------------------------------------------
-# PAGE CONFIG
+# PAGE SETUP
 # --------------------------------------------------
 
 st.set_page_config(
@@ -17,7 +17,6 @@ st.set_page_config(
 
 st.title("VE Manufacturing Cost Intelligence Platform")
 st.subheader("Technology Selection")
-(
 
 # --------------------------------------------------
 # LOAD MASTER DATA
@@ -29,30 +28,9 @@ try:
 
     masterdata = loader.load_all()
 
-    required_datasets = [
-        "materials",
-        "regions",
-        "technology_rules",
-        "technology_cost_library"
-    ]
-
-    missing = [
-        ds
-        for ds in required_datasets
-        if ds not in masterdata
-    ]
-
-    if missing:
-
-        st.error(
-            f"Missing master data: {missing}"
-        )
-
-        st.stop()
-
     materials_df = masterdata["materials"]
     regions_df = masterdata["regions"]
-    technology_rules_df = masterdata["technology_rules"]
+    rules_df = masterdata["technology_rules"]
     technology_cost_df = masterdata["technology_cost_library"]
 
 except Exception as e:
@@ -69,15 +47,25 @@ except Exception as e:
 
 materials_df.columns = materials_df.columns.str.strip()
 regions_df.columns = regions_df.columns.str.strip()
-technology_rules_df.columns = (
-    technology_rules_df.columns.str.strip()
-)
+rules_df.columns = rules_df.columns.str.strip()
 technology_cost_df.columns = (
     technology_cost_df.columns.str.strip()
 )
 
 # --------------------------------------------------
-# INPUTS
+# ENGINES
+# --------------------------------------------------
+
+technology_engine = TechnologyEngine(
+    rules_df
+)
+
+cost_engine = CostEngine(
+    technology_cost_df
+)
+
+# --------------------------------------------------
+# INPUT SECTION
 # --------------------------------------------------
 
 col1, col2 = st.columns(2)
@@ -101,17 +89,19 @@ with col1:
 
     material = st.selectbox(
         "Material",
-        materials_df["Material_Name"].tolist()
+        materials_df["Material_Name"]
     )
 
 with col2:
 
-    material_row = materials_df[
+    selected_material = materials_df[
         materials_df["Material_Name"] == material
     ]
 
     default_price = float(
-        material_row["Default_Price_EUR_kg"].iloc[0]
+        selected_material[
+            "Default_Price_EUR_kg"
+        ].iloc[0]
     )
 
     material_price = st.number_input(
@@ -123,7 +113,7 @@ with col2:
 
     region = st.selectbox(
         "Region",
-        regions_df["Region Name"].tolist()
+        regions_df["Region Name"]
     )
 
     complexity = st.selectbox(
@@ -140,15 +130,19 @@ selected_region = regions_df[
 ]
 
 labour_rate = float(
-    selected_region["Labour Rate EUR hr"].iloc[0]
+    selected_region[
+        "Labour Rate EUR hr"
+    ].iloc[0]
 )
 
 overhead_factor = float(
-    selected_region["Overhead factor"].iloc[0]
+    selected_region[
+        "Overhead factor"
+    ].iloc[0]
 )
 
 # --------------------------------------------------
-# INPUT SUMMARY
+# INPUT OVERVIEW
 # --------------------------------------------------
 
 st.divider()
@@ -182,48 +176,48 @@ with c4:
     )
 
 # --------------------------------------------------
-# RUN CALCULATION
+# CALCULATE
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
 
     try:
 
-        material_group = material_row[
+        material_group = selected_material[
             "Material_Group"
         ].iloc[0]
 
-        technology_engine = TechnologyEngine(
-            technology_rules_df
-        )
-
-        recommendations = technology_engine.recommend(
-            weight=part_weight,
-            volume=annual_volume,
-            material=material_group,
-            complexity=complexity
+        recommendations = (
+            technology_engine.recommend(
+                weight=part_weight,
+                volume=annual_volume,
+                material=material_group,
+                complexity=complexity
+            )
         )
 
         recommendations_df = pd.DataFrame(
             recommendations
         )
 
-        st.subheader("Recommended Technologies")
+        st.subheader(
+            "Recommended Technologies"
+        )
 
         st.dataframe(
             recommendations_df,
             use_container_width=True
         )
 
-        cost_engine = CostEngine(
-            technology_cost_df
-        )
+        # ------------------------------------------
+        # COST CALCULATIONS
+        # ------------------------------------------
 
         cost_results = []
 
-        for _, tech in recommendations_df.iterrows():
+        for _, row in recommendations_df.iterrows():
 
-            technology_name = tech["Technology"]
+            technology_name = row["Technology"]
 
             try:
 
@@ -239,45 +233,19 @@ if st.button("Recommend Technology"):
                 cost_results.append(
                     {
                         "Technology": technology_name,
-                        "Score": tech["Score"],
-
-                        "Material Cost EUR":
-                            cost.get("Material Cost", 0),
-
-                        "Setup Cost EUR":
-                            cost.get("Setup Cost", 0),
-
-                        "Cycle Cost EUR":
-                            cost.get("Cycle Cost", 0),
-
-                        "Machine Cost EUR":
-                            cost.get("Machine Cost", 0),
-
-                        "Labour Cost EUR":
-                            cost.get("Labour Cost", 0),
-
-                        "Overhead Cost EUR":
-                            cost.get("Overhead Cost", 0),
-
-                        "Tooling Cost EUR":
-                            cost.get("Tooling Cost", 0),
-
-                        "Total Cost EUR/pc":
-                            cost.get("Total Cost", 0),
-
-                        "Validation Score":
-                            cost.get(
-                                "Validation Score",
-                                100
-                            ),
-
-                        "Warnings":
-                            "; ".join(
-                                cost.get(
-                                    "Warnings",
-                                    []
-                                )
-                            )
+                        "Score": row["Score"],
+                        "Material Cost EUR": cost["Material Cost"],
+                        "Setup Cost EUR": cost["Setup Cost"],
+                        "Cycle Cost EUR": cost["Cycle Cost"],
+                        "Machine Cost EUR": cost["Machine Cost"],
+                        "Labour Cost EUR": cost["Labour Cost"],
+                        "Overhead Cost EUR": cost["Overhead Cost"],
+                        "Tooling Cost EUR": cost["Tooling Cost"],
+                        "Total Cost EUR/pc": cost["Total Cost"],
+                        "Validation Score": cost["Validation Score"],
+                        "Warnings": "; ".join(
+                            cost["Warnings"]
+                        )
                     }
                 )
 
@@ -304,10 +272,6 @@ if st.button("Recommend Technology"):
                 ascending=True
             )
 
-            # ----------------------------------
-            # COST TABLE
-            # ----------------------------------
-
             st.subheader(
                 "Technology Cost Comparison"
             )
@@ -317,32 +281,24 @@ if st.button("Recommend Technology"):
                 use_container_width=True
             )
 
-            # ----------------------------------
-            # COST BREAKDOWN
-            # ----------------------------------
+            # ------------------------------------------
+            # COST BREAKDOWN CHART
+            # ------------------------------------------
 
             st.subheader(
                 "Cost Breakdown by Technology"
             )
 
-            chart_columns = [
-                "Technology",
-                "Material Cost EUR",
-                "Setup Cost EUR",
-                "Cycle Cost EUR",
-                "Labour Cost EUR",
-                "Overhead Cost EUR",
-                "Tooling Cost EUR"
-            ]
-
-            available_columns = [
-                col
-                for col in chart_columns
-                if col in cost_df.columns
-            ]
-
             chart_df = cost_df[
-                available_columns
+                [
+                    "Technology",
+                    "Material Cost EUR",
+                    "Setup Cost EUR",
+                    "Cycle Cost EUR",
+                    "Labour Cost EUR",
+                    "Overhead Cost EUR",
+                    "Tooling Cost EUR"
+                ]
             ].copy()
 
             chart_df = pd.melt(
@@ -376,9 +332,9 @@ if st.button("Recommend Technology"):
                 use_container_width=True
             )
 
-            # ----------------------------------
+            # ------------------------------------------
             # VALIDATION ISSUES
-            # ----------------------------------
+            # ------------------------------------------
 
             validation_df = cost_df[
                 cost_df["Warnings"] != ""
@@ -396,10 +352,6 @@ if st.button("Recommend Technology"):
 
             else:
 
-                st.warning(
-                    f"{len(validation_df)} technologies have validation issues."
-                )
-
                 st.dataframe(
                     validation_df[
                         [
@@ -411,9 +363,9 @@ if st.button("Recommend Technology"):
                     use_container_width=True
                 )
 
-            # ----------------------------------
+            # ------------------------------------------
             # BEST OPTION
-            # ----------------------------------
+            # ------------------------------------------
 
             best_option = cost_df.iloc[0]
 
@@ -437,17 +389,17 @@ Estimated Manufacturing Cost:
     except Exception as e:
 
         st.error(
-            f"Calculation failed: {str(e)}"
+            f"Calculation failed: {e}"
         )
 
 # --------------------------------------------------
-# DEBUG SECTION
+# DEBUG
 # --------------------------------------------------
 
 with st.expander("Debug Information"):
 
     st.write(
-        "Loaded datasets:"
+        "Loaded Datasets:"
     )
 
     st.write(
@@ -460,10 +412,6 @@ with st.expander("Debug Information"):
 
     st.write(
         technology_cost_df.columns.tolist()
-    )
-
-    st.write(
-        "Technology Cost Library"
     )
 
     st.dataframe(
