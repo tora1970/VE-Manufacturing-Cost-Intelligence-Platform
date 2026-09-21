@@ -1,7 +1,9 @@
+import pandas as pd
 import streamlit as st
 
 from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
+from engine.cost_engine import CostEngine
 
 # --------------------------------------------------
 # Page Setup
@@ -22,17 +24,23 @@ masterdata = loader.load_all()
 materials_df = masterdata["materials"]
 regions_df = masterdata["regions"]
 rules_df = masterdata["technology_rules"]
+process_cost_df = masterdata["process_cost_library"]
 
-# Ryd kolonnenavne
+# --------------------------------------------------
+# Clean Column Names
+# --------------------------------------------------
+
 materials_df.columns = materials_df.columns.str.strip()
 regions_df.columns = regions_df.columns.str.strip()
 rules_df.columns = rules_df.columns.str.strip()
+process_cost_df.columns = process_cost_df.columns.str.strip()
 
 # --------------------------------------------------
-# Initialize Technology Engine
+# Initialize Engines
 # --------------------------------------------------
 
-engine = TechnologyEngine(rules_df)
+technology_engine = TechnologyEngine(rules_df)
+cost_engine = CostEngine(process_cost_df)
 
 # --------------------------------------------------
 # Header
@@ -94,41 +102,46 @@ with col2:
 
     complexity = st.selectbox(
         "Part Complexity",
-        [
-            "Low",
-            "Medium",
-            "High"
-        ]
+        ["Low", "Medium", "High"]
     )
 
 # --------------------------------------------------
-# Input Summary
+# Selected Inputs
 # --------------------------------------------------
 
 st.divider()
 
 st.subheader("Selected Inputs")
 
-col1, col2, col3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with col1:
-    st.metric("Weight", f"{part_weight:.3f} kg")
+with c1:
+    st.metric(
+        "Weight",
+        f"{part_weight:.3f} kg"
+    )
 
-with col2:
-    st.metric("Volume", f"{annual_volume:,.0f} pcs/year")
+with c2:
+    st.metric(
+        "Volume",
+        f"{annual_volume:,.0f} pcs/year"
+    )
 
-with col3:
-    st.metric("Material Price", f"€ {material_price:.2f}/kg")
+with c3:
+    st.metric(
+        "Material Price",
+        f"€ {material_price:.2f}/kg"
+    )
 
 # --------------------------------------------------
-# Recommendation
+# Technology Recommendation
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
 
     try:
 
-        recommendations = engine.recommend(
+        recommendations = technology_engine.recommend(
             weight=part_weight,
             volume=annual_volume,
             material=material,
@@ -136,35 +149,37 @@ if st.button("Recommend Technology"):
             complexity=complexity
         )
 
-        st.success("Technology evaluation completed")
+        st.success(
+            "Technology evaluation completed"
+        )
 
-        st.subheader("Recommended Technologies")
+        # ------------------------------------------
+        # Technology Ranking
+        # ------------------------------------------
+
+        st.subheader(
+            "Recommended Technologies"
+        )
 
         st.dataframe(
             recommendations,
             use_container_width=True
         )
 
-    except Exception as e:
+        # ------------------------------------------
+        # Cost Comparison
+        # ------------------------------------------
 
-        st.error(
-            f"Technology recommendation failed: {str(e)}"
+        st.subheader(
+            "Technology Cost Comparison"
         )
 
-# --------------------------------------------------
-# Debug Section (kan fjernes senere)
-# --------------------------------------------------
+        cost_results = []
 
-with st.expander("Debug Information"):
+        top_technologies = recommendations.head(3)
 
-    st.write("Loaded datasets:")
-    st.write(list(masterdata.keys()))
+        for _, row in top_technologies.iterrows():
 
-    st.write("Materials Columns:")
-    st.write(materials_df.columns.tolist())
-
-    st.write("Regions Columns:")
-    st.write(regions_df.columns.tolist())
-
-    st.write("Technology Rules Columns:")
-    st.write(rules_df.columns.tolist())
+            cost = cost_engine.calculate_cost(
+                technology=row["Technology"],
+                weight
