@@ -101,11 +101,7 @@ with col2:
 
     complexity = st.selectbox(
         "Part Complexity",
-        [
-            "Low",
-            "Medium",
-            "High"
-        ]
+        ["Low", "Medium", "High"]
     )
 
 # --------------------------------------------------
@@ -135,31 +131,19 @@ st.subheader("Selected Inputs")
 c1, c2, c3, c4 = st.columns(4)
 
 with c1:
-    st.metric(
-        "Weight",
-        f"{part_weight:.3f} kg"
-    )
+    st.metric("Weight", f"{part_weight:.3f} kg")
 
 with c2:
-    st.metric(
-        "Annual Volume",
-        f"{annual_volume:,.0f}"
-    )
+    st.metric("Annual Volume", f"{annual_volume:,.0f}")
 
 with c3:
-    st.metric(
-        "Material Price",
-        f"€ {material_price:.2f}/kg"
-    )
+    st.metric("Material Price", f"€ {material_price:.2f}/kg")
 
 with c4:
-    st.metric(
-        "Labour Rate",
-        f"€ {labour_rate:.2f}/hr"
-    )
+    st.metric("Labour Rate", f"€ {labour_rate:.2f}/hr")
 
 # --------------------------------------------------
-# Run Calculation
+# Calculation
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
@@ -174,12 +158,6 @@ if st.button("Recommend Technology"):
             complexity=complexity
         )
 
-        st.success("Technology evaluation completed")
-
-        # ------------------------------------------
-        # Technology Ranking
-        # ------------------------------------------
-
         st.subheader("Recommended Technologies")
 
         st.dataframe(
@@ -187,17 +165,9 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # ------------------------------------------
-        # Cost Comparison
-        # ------------------------------------------
-
-        st.subheader("Technology Cost Comparison")
-
         cost_results = []
 
-        top_technologies = recommendations.head(3)
-
-        for _, row in top_technologies.iterrows():
+        for _, row in recommendations.head(3).iterrows():
 
             cost = cost_engine.calculate_cost(
                 technology=row["Technology"],
@@ -228,6 +198,8 @@ if st.button("Recommend Technology"):
             ascending=True
         )
 
+        st.subheader("Technology Cost Comparison")
+
         st.dataframe(
             cost_df,
             use_container_width=True
@@ -236,12 +208,9 @@ if st.button("Recommend Technology"):
         best_option = cost_df.iloc[0]
 
         st.success(
-            f"""
-Best Technology Option: {best_option['Technology']}
-
-Estimated Manufacturing Cost:
-€ {best_option['Total Cost EUR/pc']:.2f}/pc
-"""
+            f"Best Technology Option: {best_option['Technology']} | "
+            f"Estimated Manufacturing Cost: "
+            f"€ {best_option['Total Cost EUR/pc']:.2f}/pc"
         )
 
     except Exception as e:
