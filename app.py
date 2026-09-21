@@ -219,6 +219,6 @@ if st.button("Recommend Technology"):
 Best Technology Option: {best_option['Technology']}
 
 Estimated Manufacturing Cost:
-€ {best_option['Total Cost EUR/pc'\]:.2f}/pc
+€ {best_option['Total Cost EUR/pc']:.2f}/pc
 """
         )
