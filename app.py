@@ -1,6 +1,5 @@
 import pandas as pd
 import streamlit as st
-import matplotlib.pyplot as plt
 
 from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
@@ -218,22 +217,25 @@ if st.button("Recommend Technology"):
 # Cost Breakdown Chart
 # ------------------------------------------
 
-        st.subheader("Cost Breakdown by Technology")
+st.subheader("Cost Breakdown by Technology")
 
-        chart_df = cost_df[
-            [
-                "Technology",
-                "Material Cost EUR",
-                "Machine Cost EUR",
-                "Labour Cost EUR",
-                "Overhead Cost EUR",
-                "Tooling Cost EUR"
-            ]
-        ].copy()
+chart_df = cost_df[
+    [
+        "Technology",
+        "Material Cost EUR",
+        "Machine Cost EUR",
+        "Labour Cost EUR",
+        "Overhead Cost EUR",
+        "Tooling Cost EUR"
+    ]
+].copy()
 
-        chart_df = chart_df.set_index("Technology")
+chart_df = chart_df.set_index("Technology")
 
-        st.bar_chart(chart_df)
+st.bar_chart(
+    chart_df,
+    horizontal=True
+)
 
         # ------------------------------------------
         # Best Option
