@@ -218,13 +218,16 @@ if st.button("Recommend Technology"):
 
             best_option = cost_df.iloc[0]
 
+            best_technology = best_option["Technology"]
+            best_cost = best_option["Total Cost EUR/pc"]
+
             st.success(
                 f"""
-Best Technology Option: {best_option['Technology']}
+            Best Technology Option: {best_technology}
 
-Estimated Manufacturing Cost:
-€ {best_option['Total Cost EUR/pc'\]:.2f}/pc
-"""
+            Estimated Manufacturing Cost:
+            € {best_cost:.2f}/pc
+            """
             )
 
         else:
