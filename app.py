@@ -39,7 +39,7 @@ with col1:
 
     material = st.selectbox(
         "Material",
-        masterdata["Materials"]["Material_Name"]
+        masterdata["materials"]["Material_Name"]
     )
 
 with col2:
@@ -52,7 +52,7 @@ with col2:
 
     region = st.selectbox(
         "Region",
-        masterdata["Regions"]["Region_Name"]
+        masterdata["regions"]["Region_Name"]
     )
 
     complexity = st.selectbox(
