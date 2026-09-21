@@ -177,6 +177,7 @@ if st.button("Recommend Technology"):
                 technology=row["Technology"],
                 weight=part_weight,
                 material_price=material_price
+                annual_volume=annual_volume
             )
 
             cost_results.append(
