@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import altair as alt
 
 from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
