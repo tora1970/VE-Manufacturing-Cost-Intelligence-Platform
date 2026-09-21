@@ -24,7 +24,7 @@ masterdata = loader.load_all()
 materials_df = masterdata["materials"]
 regions_df = masterdata["regions"]
 rules_df = masterdata["technology_rules"]
-process_cost_df = masterdata["process_cost_library"]
+technology_cost_df = masterdata["technology_cost_library"]
 
 # --------------------------------------------------
 # Clean Column Names
@@ -33,21 +33,20 @@ process_cost_df = masterdata["process_cost_library"]
 materials_df.columns = materials_df.columns.str.strip()
 regions_df.columns = regions_df.columns.str.strip()
 rules_df.columns = rules_df.columns.str.strip()
-process_cost_df.columns = process_cost_df.columns.str.strip()
+technology_cost_df.columns = technology_cost_df.columns.str.strip()
 
 # --------------------------------------------------
 # Initialize Engines
 # --------------------------------------------------
 
 technology_engine = TechnologyEngine(rules_df)
-cost_engine = CostEngine(process_cost_df)
+cost_engine = CostEngine(technology_cost_df)
 
 # --------------------------------------------------
 # Header
 # --------------------------------------------------
 
 st.title("VE Manufacturing Cost Intelligence Platform")
-
 st.subheader("Technology Selection")
 
 # --------------------------------------------------
@@ -106,7 +105,7 @@ with col2:
     )
 
 # --------------------------------------------------
-# Selected Inputs
+# Input Summary
 # --------------------------------------------------
 
 st.divider()
@@ -116,25 +115,16 @@ st.subheader("Selected Inputs")
 c1, c2, c3 = st.columns(3)
 
 with c1:
-    st.metric(
-        "Weight",
-        f"{part_weight:.3f} kg"
-    )
+    st.metric("Weight", f"{part_weight:.3f} kg")
 
 with c2:
-    st.metric(
-        "Volume",
-        f"{annual_volume:,.0f} pcs/year"
-    )
+    st.metric("Volume", f"{annual_volume:,.0f} pcs/year")
 
 with c3:
-    st.metric(
-        "Material Price",
-        f"€ {material_price:.2f}/kg"
-    )
+    st.metric("Material Price", f"€ {material_price:.2f}/kg")
 
 # --------------------------------------------------
-# Technology Recommendation
+# Run Technology Recommendation
 # --------------------------------------------------
 
 if st.button("Recommend Technology"):
@@ -149,17 +139,13 @@ if st.button("Recommend Technology"):
             complexity=complexity
         )
 
-        st.success(
-            "Technology evaluation completed"
-        )
+        st.success("Technology evaluation completed")
 
         # ------------------------------------------
         # Technology Ranking
         # ------------------------------------------
 
-        st.subheader(
-            "Recommended Technologies"
-        )
+        st.subheader("Recommended Technologies")
 
         st.dataframe(
             recommendations,
@@ -170,9 +156,7 @@ if st.button("Recommend Technology"):
         # Cost Comparison
         # ------------------------------------------
 
-        st.subheader(
-            "Technology Cost Comparison"
-        )
+        st.subheader("Technology Cost Comparison")
 
         cost_results = []
 
@@ -210,7 +194,9 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # Best option
+        # ------------------------------------------
+        # Best Option
+        # ------------------------------------------
 
         best_option = cost_df.iloc[0]
 
@@ -220,10 +206,32 @@ Best Technology Option: {best_option['Technology']}
 
 Estimated Manufacturing Cost:
 € {best_option['Total Cost EUR/pc']:.2f}/pc
-"""        )
+"""
+        )
 
     except Exception as e:
 
         st.error(
             f"Calculation failed: {str(e)}"
         )
+
+# --------------------------------------------------
+# Debug Section
+# --------------------------------------------------
+
+with st.expander("Debug Information"):
+
+    st.write(
+        "Loaded datasets:",
+        list(masterdata.keys())
+    )
+
+    st.write(
+        "Technology Cost Library Columns:",
+        technology_cost_df.columns.tolist()
+    )
+
+    st.write(
+        "Technology Cost Library:",
+        technology_cost_df
+    )
