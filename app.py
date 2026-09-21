@@ -1,14 +1,14 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 
 from utils.loader import load_all
 from engine.technology_engine import TechnologyEngine
 from engine.cost_engine import CostEngine
 
-# --------------------------------------------------
+
+# ==================================================
 # PAGE CONFIG
-# --------------------------------------------------
+# ==================================================
 
 st.set_page_config(
     page_title="VE Manufacturing Cost Intelligence Platform",
@@ -16,11 +16,11 @@ st.set_page_config(
 )
 
 st.title("VE Manufacturing Cost Intelligence Platform")
-st.subheader("Technology Selection")
 
-# --------------------------------------------------
+
+# ==================================================
 # LOAD MASTER DATA
-# --------------------------------------------------
+# ==================================================
 
 try:
 
@@ -36,9 +36,12 @@ except Exception as e:
     st.error(f"Failed to load master data: {e}")
     st.stop()
 
-# --------------------------------------------------
+
+# ==================================================
 # INPUT SECTION
-# --------------------------------------------------
+# ==================================================
+
+st.subheader("Technology Selection")
 
 col1, col2 = st.columns(2)
 
@@ -66,18 +69,18 @@ with col1:
 
 with col2:
 
-    material_row = materials_df[
+    selected_material = materials_df[
         materials_df["Material_Name"] == material
     ]
 
-    default_price = float(
-        material_row["Default_Price_EUR_kg"].iloc[0]
+    default_material_price = float(
+        selected_material["Default_Price_EUR_kg"].iloc[0]
     )
 
     material_price = st.number_input(
         "Material Price (EUR/kg)",
         min_value=0.0,
-        value=default_price,
+        value=default_material_price,
         step=0.10
     )
 
@@ -93,31 +96,16 @@ with col2:
         ["Low", "Medium", "High"]
     )
 
-# --------------------------------------------------
-# REGION DATA
-# --------------------------------------------------
 
-selected_region = regions_df[
-    regions_df[region_column] == region
-]
-
-labour_rate = float(
-    selected_region["Labour Rate EUR hr"].iloc[0]
-)
-
-overhead_factor = float(
-    selected_region["Overhead factor"].iloc[0]
-)
-
-# --------------------------------------------------
+# ==================================================
 # SELECTED INPUTS
-# --------------------------------------------------
+# ==================================================
 
 st.divider()
 
 st.subheader("Selected Inputs")
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 
 with c1:
     st.metric(
@@ -127,7 +115,7 @@ with c1:
 
 with c2:
     st.metric(
-        "Volume",
+        "Annual Volume",
         f"{annual_volume:,.0f} pcs/year"
     )
 
@@ -137,41 +125,137 @@ with c3:
         f"€ {material_price:.2f}/kg"
     )
 
-with c4:
-    st.metric(
-        "Labour Rate",
-        f"€ {labour_rate:.2f}/hr"
-    )
 
-# --------------------------------------------------
-# RUN TECHNOLOGY EVALUATION
-# --------------------------------------------------
+# ==================================================
+# CALCULATE
+# ==================================================
 
 if st.button("Recommend Technology"):
 
     try:
 
-        material_group = material_row[
+        material_group = selected_material[
             "Material_Group"
         ].iloc[0]
 
-        tech_engine = TechnologyEngine(
+        technology_engine = TechnologyEngine(
             technology_rules_df
         )
 
-        recommendations = tech_engine.recommend(
+        recommendations = technology_engine.recommend(
             weight=part_weight,
             volume=annual_volume,
             material=material_group,
             complexity=complexity
         )
 
-        st.success(
-            "Technology evaluation completed"
+        st.success("Technology evaluation completed")
+
+        # ==========================================
+        # TECHNOLOGY RECOMMENDATIONS
+        # ==========================================
+
+        st.subheader("Recommended Technologies")
+
+        recommendations_df = pd.DataFrame(
+            recommendations
         )
 
-        # ------------------------------------------
-        # TECHNOLOGY RECOMMENDATIONS
-        # ------------------------------------------
+        st.dataframe(
+            recommendations_df,
+            use_container_width=True
+        )
 
-        st.subheader("Recommended 
+        # ==========================================
+        # COST COMPARISON
+        # ==========================================
+
+        st.subheader("Technology Cost Comparison")
+
+        cost_engine = CostEngine(
+            technology_cost_df
+        )
+
+        cost_results = []
+
+        for rec in recommendations:
+
+            technology_name = rec["technology"]
+
+            try:
+
+                result = cost_engine.calculate_cost(
+                    technology=technology_name,
+                    weight_kg=part_weight,
+                    material_price_eur_kg=material_price,
+                    annual_volume=annual_volume
+                )
+
+                result["Score"] = rec["score"]
+
+                cost_results.append(result)
+
+            except Exception as calc_error:
+
+                st.warning(
+                    f"{technology_name}: {calc_error}"
+                )
+
+        if len(cost_results) > 0:
+
+            cost_df = pd.DataFrame(
+                cost_results
+            )
+
+            cost_df = cost_df.sort_values(
+                by="Total Cost EUR/pc"
+            )
+
+            st.dataframe(
+                cost_df,
+                use_container_width=True
+            )
+
+            best_option = cost_df.iloc[0]
+
+            st.success(
+                f"""
+Best Technology Option: {best_option['Technology']}
+
+Estimated Manufacturing Cost:
+€ {best_option['Total Cost EUR/pc'\]:.2f}/pc
+"""
+            )
+
+        else:
+
+            st.error(
+                "No technology costs could be calculated."
+            )
+
+    except Exception as e:
+
+        st.error(
+            f"Calculation failed: {str(e)}"
+        )
+
+
+# ==================================================
+# DEBUG SECTION
+# ==================================================
+
+with st.expander("Debug Information"):
+
+    st.write("Loaded datasets:")
+    st.write(list(masterdata.keys()))
+
+    st.write("Technology Cost Library Columns:")
+   st.write(
+        technology_cost_df.columns.tolist()
+    )
+
+    st.write("Technology Cost Library:")
+    st.dataframe(
+        technology_cost_df,
+        use_container_width=True
+    )
