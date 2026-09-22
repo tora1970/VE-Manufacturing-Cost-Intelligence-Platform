@@ -240,3 +240,86 @@ class ProcessBenchmark:
         return pd.DataFrame(
             kpi_rows
         )
+
+def calculate_payback(
+    self,
+    benchmark_df,
+    baseline_technology
+):
+
+    benchmark_df = (
+        benchmark_df.copy()
+    )
+
+    baseline_row = benchmark_df[
+        benchmark_df["Technology"]
+        == baseline_technology
+    ]
+
+    if baseline_row.empty:
+        return benchmark_df
+
+    baseline_tooling = 0.0
+
+    if "Tooling Cost" in benchmark_df.columns:
+
+        baseline_tooling = (
+            baseline_row.iloc[0]
+            ["Tooling Cost"]
+        )
+
+    payback_years = []
+
+    for _, row in benchmark_df.iterrows():
+
+        annual_saving = row.get(
+            "Annual Saving",
+            None
+        )
+
+        tooling_cost = row.get(
+            "Tooling Cost",
+            0.0
+        )
+
+        if annual_saving is None:
+
+            payback_years.append(
+                None
+            )
+
+            continue
+
+        if annual_saving <= 0:
+
+            payback_years.append(
+                None
+            )
+
+            continue
+
+        incremental_investment = max(
+            0.0,
+            tooling_cost
+            - baseline_tooling
+        )
+
+        payback_years.append(
+            incremental_investment
+            / annual_saving
+        )
+
+    benchmark_df[
+        "Payback (Years)"
+    ] = payback_years
+
+    benchmark_df[
+        "Payback (Months)"
+    ] = (
+        benchmark_df[
+            "Payback (Years)"
+        ]
+        * 12
+    )
+
+    return benchmark_df
