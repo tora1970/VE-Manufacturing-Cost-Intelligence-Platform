@@ -162,4 +162,4 @@ def validate_common_inputs(
 
     validate_overhead_factor(
         overhead_factor
-    )
+    ),
