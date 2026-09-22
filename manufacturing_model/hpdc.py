@@ -1,164 +1,309 @@
-from dataclasses import dataclass
-from typing import Dict, Any
+from manufacturing_model.base_model import (
+    BaseManufacturingModel
+)
+
+from utils.validators import (
+    validate_common_inputs,
+    validate_cycle_time,
+    validate_machine_rate,
+    validate_tool_cost,
+    validate_tool_life,
+    validate_scrap_rate,
+    validate_positive
+)
 
 
-@dataclass
-class HPDCInputs:
-    part_weight_kg: float
-    shot_weight_kg: float
+class HPDCModel(
+    BaseManufacturingModel
+):
 
-    material_price_per_kg: float
+    def calculate(
+        self,
+        part_weight,
+        annual_volume,
+        material_price,
+        labour_rate,
+        overhead_factor,
+        **kwargs
+    ):
 
-    cycle_time_sec: float
+        # ----------------------------------
+        # COMMON VALIDATION
+        # ----------------------------------
 
-    machine_rate_per_hour: float
-    labour_rate_per_hour: float
-
-    tool_cost: float
-    tool_life_shots: int
-
-    scrap_rate: float = 0.03
-    overhead_factor: float = 0.15
-
-
-class HPDCModel:
-
-    def __init__(self, inputs: HPDCInputs):
-        self.i = inputs
-
-    def validate(self):
-
-        if self.i.part_weight_kg <= 0:
-            raise ValueError("part_weight_kg must be > 0")
-
-        if self.i.shot_weight_kg <= 0:
-            raise ValueError("shot_weight_kg must be > 0")
-
-        if self.i.shot_weight_kg < self.i.part_weight_kg:
-            raise ValueError(
-                "shot_weight_kg must be greater than or equal to part_weight_kg"
-            )
-
-        if self.i.material_price_per_kg <= 0:
-            raise ValueError("material_price_per_kg must be > 0")
-
-        if self.i.cycle_time_sec <= 0:
-            raise ValueError("cycle_time_sec must be > 0")
-
-        if self.i.machine_rate_per_hour <= 0:
-            raise ValueError("machine_rate_per_hour must be > 0")
-
-        if self.i.labour_rate_per_hour <= 0:
-            raise ValueError("labour_rate_per_hour must be > 0")
-
-        if self.i.tool_cost < 0:
-            raise ValueError("tool_cost cannot be negative")
-
-        if self.i.tool_life_shots <= 0:
-            raise ValueError("tool_life_shots must be > 0")
-
-        if not 0 <= self.i.scrap_rate < 0.50:
-            raise ValueError(
-                "scrap_rate must be between 0 and 0.50"
-            )
-
-        if self.i.overhead_factor < 0:
-            raise ValueError(
-                "overhead_factor cannot be negative"
-            )
-
-    def calculate(self) -> Dict[str, Any]:
-
-        self.validate()
-
-        gross_material_cost = (
-            self.i.shot_weight_kg
-            * self.i.material_price_per_kg
+        validate_common_inputs(
+            part_weight=part_weight,
+            annual_volume=annual_volume,
+            material_price=material_price,
+            labour_rate=labour_rate,
+            overhead_factor=overhead_factor
         )
+
+        # ----------------------------------
+        # PROCESS INPUTS
+        # ----------------------------------
+
+        shot_weight_kg = kwargs.get(
+            "shot_weight_kg",
+            part_weight * 1.30
+        )
+
+        cycle_time_sec = kwargs.get(
+            "cycle_time_sec",
+            45
+        )
+
+        machine_rate_per_hour = kwargs.get(
+            "machine_rate_per_hour",
+            75
+        )
+
+        tool_cost = kwargs.get(
+            "tool_cost",
+            120000
+        )
+
+        tool_life_shots = kwargs.get(
+            "tool_life_shots",
+            500000
+        )
+
+        scrap_rate = kwargs.get(
+            "scrap_rate",
+            0.03
+        )
+
+        cavities = kwargs.get(
+            "cavities",
+            1
+        )
+
+        validate_positive(
+            shot_weight_kg,
+            "Shot Weight"
+        )
+
+        validate_cycle_time(
+            cycle_time_sec
+        )
+
+        validate_machine_rate(
+            machine_rate_per_hour
+        )
+
+        validate_tool_cost(
+            tool_cost
+        )
+
+        validate_tool_life(
+            tool_life_shots
+        )
+
+        validate_scrap_rate(
+            scrap_rate
+        )
+
+        # ----------------------------------
+        # CREATE OUTPUT
+        # ----------------------------------
+
+        result = self.create_output()
+
+        result["Technology"] = (
+            "HPDC"
+        )
+
+        # ----------------------------------
+        # EFFECTIVE CYCLE TIME
+        # ----------------------------------
+
+        cycle_time_per_part = (
+            cycle_time_sec / cavities
+        )
+
+        # ----------------------------------
+        # MATERIAL COST
+        # ----------------------------------
 
         material_cost = (
-            gross_material_cost
-            / (1 - self.i.scrap_rate)
+            shot_weight_kg
+            * material_price
+            * (1 + scrap_rate)
         )
 
-        cycle_time_hr = (
-            self.i.cycle_time_sec
-            / 3600
-        )
+        # ----------------------------------
+        # MACHINE COST
+        # ----------------------------------
 
         machine_cost = (
-            cycle_time_hr
-            * self.i.machine_rate_per_hour
+            cycle_time_per_part
+            / 3600
+            * machine_rate_per_hour
         )
+
+        # ----------------------------------
+        # LABOUR COST
+        # ----------------------------------
 
         labour_cost = (
-            cycle_time_hr
-            * self.i.labour_rate_per_hour
+            cycle_time_per_part
+            / 3600
+            * labour_rate
         )
 
-        tooling_cost = (
-            self.i.tool_cost
-            / self.i.tool_life_shots
-        )
+        # ----------------------------------
+        # OVERHEAD COST
+        # ----------------------------------
 
         overhead_cost = (
-            material_cost
-            + machine_cost
-            + labour_cost
-        ) * self.i.overhead_factor
+            labour_cost
+            * overhead_factor
+        )
 
-        total_cost = (
-            material_cost
-            + machine_cost
+        # ----------------------------------
+        # TOOLING COST
+        # ----------------------------------
+
+        tooling_cost = (
+            tool_cost
+            / tool_life_shots
+        )
+
+        # ----------------------------------
+        # SETUP COST
+        # ----------------------------------
+
+        setup_cost = (
+            tool_cost
+            / annual_volume
+            * 0.01
+        )
+
+        # ----------------------------------
+        # MANUFACTURING COST
+        # ----------------------------------
+
+        manufacturing_cost = (
+            machine_cost
             + labour_cost
-            + tooling_cost
             + overhead_cost
         )
 
-        material_utilization = (
-            self.i.part_weight_kg
-            / self.i.shot_weight_kg
+        total_cost = (
+            self.calculate_total_cost(
+                material_cost=material_cost,
+                setup_cost=setup_cost,
+                machine_cost=machine_cost,
+                labour_cost=labour_cost,
+                overhead_cost=overhead_cost,
+                tooling_cost=tooling_cost
+            )
         )
 
-        yield_loss = (
-            1 - material_utilization
+        # ----------------------------------
+        # OUTPUT
+        # ----------------------------------
+
+        result["Material Cost"] = (
+            material_cost
         )
+
+        result["Setup Cost"] = (
+            setup_cost
+        )
+
+        result["Machine Cost"] = (
+            machine_cost
+        )
+
+        result["Labour Cost"] = (
+            labour_cost
+        )
+
+        result["Overhead Cost"] = (
+            overhead_cost
+        )
+
+        result["Tooling Cost"] = (
+            tooling_cost
+        )
+
+        result["Manufacturing Cost"] = (
+            manufacturing_cost
+        )
+
+        result["Total Cost"] = (
+            total_cost
+        )
+
+        # ----------------------------------
+        # KPIs
+        # ----------------------------------
 
         parts_per_hour = (
-            3600
-            / self.i.cycle_time_sec
+            cavities
+            * 3600
+            / cycle_time_sec
         )
 
-        return {
-            "technology": "HPDC",
+        material_utilization_pct = (
+            part_weight
+            / shot_weight_kg
+            * 100
+        )
 
-            "material_cost": material_cost,
-            "machine_cost": machine_cost,
-            "labour_cost": labour_cost,
-            "tooling_cost": tooling_cost,
-            "overhead_cost": overhead_cost,
+        result["KPIs"] = {
+            "cycle_time_sec":
+                cycle_time_sec,
 
-            "total_cost": total_cost,
+            "parts_per_hour":
+                parts_per_hour,
 
-            "kpis": {
-                "material_utilization_pct": round(
-                    material_utilization * 100,
-                    2
-                ),
+            "scrap_rate_pct":
+                scrap_rate * 100,
 
-                "yield_loss_pct": round(
-                    yield_loss * 100,
-                    2
-                ),
+            "material_utilization_pct":
+                material_utilization_pct,
 
-                "parts_per_hour": round(
-                    parts_per_hour,
-                    1
-                ),
+            "oee_pct":
+                85.0,
 
-                "tool_cost_per_part": round(
-                    tooling_cost,
-                    4
-                )
-            }
+            "machine_utilization_pct":
+                85.0,
+
+            "tool_cost_per_part":
+                tooling_cost,
+
+            "cavities":
+                cavities
         }
+
+        # ----------------------------------
+        # WARNINGS
+        # ----------------------------------
+
+        if annual_volume < 5000:
+            self.add_warning(
+                result,
+                "HPDC may not be economical at low volumes."
+            )
+
+        if cavities == 1 and annual_volume > 100000:
+            self.add_warning(
+                result,
+                "Consider multi-cavity die design."
+            )
+
+        if scrap_rate > 0.05:
+            self.add_warning(
+                result,
+                "High scrap rate."
+            )
+
+        if material_utilization_pct < 70:
+            self.add_warning(
+                result,
+                "Low material utilization."
+            )
+
+        return result
