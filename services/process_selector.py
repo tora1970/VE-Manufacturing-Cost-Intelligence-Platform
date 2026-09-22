@@ -1,6 +1,6 @@
 # services/process_selector.py
 
-from manufacturing_models.hpdc import HPDCInputs, HPDCModel
+from manufacturing_model.hpdc import HPDCInputs, HPDCModel
 
 
 class ProcessSelector:
