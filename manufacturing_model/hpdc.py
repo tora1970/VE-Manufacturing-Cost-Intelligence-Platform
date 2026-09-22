@@ -1,4 +1,4 @@
-# manufacturing_models/hpdc.py
+# manufacturing_model/hpdc.py
 
 from dataclasses import dataclass
 from typing import Dict, Any
