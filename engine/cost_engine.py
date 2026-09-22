@@ -8,15 +8,14 @@ class CostEngine:
         self.df = technology_cost_df.copy()
         self.df.columns = self.df.columns.str.strip()
 
-    def calculate_cost(
-        self,
-        technology,
-        weight,
-        material_price,
-        annual_volume,
-        labour_rate,
-        overhead_factor
-    ):
+    def ca**ulate_cost(
+    self,
+    technol**y,
+    weight,
+    material_price**    annual_volume,
+    labour_rat**
+    overhead_factor,
+    **kwarg**):
 
         # ------------------------------------------
         # Find Technology
