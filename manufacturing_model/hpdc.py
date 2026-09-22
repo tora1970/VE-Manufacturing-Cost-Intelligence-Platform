@@ -81,7 +81,7 @@ class HPDCModel:
         if self.i.overhead_factor < 0:
             raise ValueError("overhead_factor cannot be negative")
 
-    def calculate(self) -> Dict[str, Any\]:
+    def calculate(self) -> Dict[str, Any\]:        
         """Run complete HPDC cost calculation."""
 
         self.validate()
