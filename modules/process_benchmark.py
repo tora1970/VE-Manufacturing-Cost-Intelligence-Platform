@@ -6,8 +6,10 @@ from engine.process_selector import ProcessSelector
 
 class ProcessBenchmark:
 
-    def __init__(self, technology_cost_df=None):
-
+    def __init__(
+        self,
+        technology_cost_df=None
+    ):
         self.cost_engine = CostEngine(
             technology_cost_df
         )
@@ -44,8 +46,7 @@ class ProcessBenchmark:
                 )
 
                 cost_result = (
-                    self.cost_engine
-                    .calculate_cost(
+                    self.cost_engine.calculate_cost(
                         technology=technology,
                         part_weight=part_weight,
                         annual_volume=annual_volume,
@@ -56,21 +57,77 @@ class ProcessBenchmark:
                     )
                 )
 
-                total_cost = (
-                    cost_result["Total Cost"]
-                )
-
                 results.append({
-
                     "Technology":
                         technology,
 
+                    "Material Cost":
+                        cost_result.get(
+                            "Material Cost",
+                            0
+                        ),
+
+                    "Setup Cost":
+                        cost_result.get(
+                            "Setup Cost",
+                            0
+                        ),
+
+                    "Machine Cost":
+                        cost_result.get(
+                            "Machine Cost",
+                            0
+                        ),
+
+                    "Labour Cost":
+                        cost_result.get(
+                            "Labour Cost",
+                            0
+                        ),
+
+                    "Overhead Cost":
+                        cost_result.get(
+                            "Overhead Cost",
+                            0
+                        ),
+
+                    "Tooling Cost":
+                        cost_result.get(
+                            "Tooling Cost",
+                            0
+                        ),
+
+                    "Manufacturing Cost":
+                        cost_result.get(
+                            "Manufacturing Cost",
+                            0
+                        ),
+
                     "Cost Per Part":
-                        total_cost,
+                        cost_result.get(
+                            "Total Cost",
+                            0
+                        ),
 
                     "Annual Cost":
-                        total_cost
-                        * annual_volume,
+                        cost_result.get(
+                            "Total Cost",
+                            0
+                        ) * annual_volume,
+
+                    "Validation Score":
+                        cost_result.get(
+                            "Validation Score",
+                            100
+                        ),
+
+                    "Warnings":
+                        "; ".join(
+                            cost_result.get(
+                                "Warnings",
+                                []
+                            )
+                        ),
 
                     "KPIs":
                         cost_result.get(
@@ -79,9 +136,16 @@ class ProcessBenchmark:
                         )
                 })
 
-            except Exception:
+            except Exception as e:
 
-                continue
+                results.append({
+                    "Technology": technology,
+                    "Cost Per Part": None,
+                    "Annual Cost": None,
+                    "Validation Score": 0,
+                    "Warnings": str(e),
+                    "KPIs": {}
+                })
 
         benchmark_df = pd.DataFrame(
             results
@@ -94,7 +158,8 @@ class ProcessBenchmark:
             benchmark_df
             .sort_values(
                 by="Cost Per Part",
-                ascending=True
+                ascending=True,
+                na_position="last"
             )
             .reset_index(
                 drop=True
@@ -183,143 +248,66 @@ class ProcessBenchmark:
 
         return benchmark_df
 
-    def get_best_technology(
+    def calculate_payback(
         self,
-        benchmark_df
+        benchmark_df,
+        baseline_technology
     ):
 
-        if benchmark_df.empty:
-            return None
-
-        return benchmark_df.iloc[0]
-
-    def create_kpi_comparison(
-        self,
-        benchmark_df
-    ):
-
-        if benchmark_df.empty:
-            return pd.DataFrame()
-
-        kpi_rows = []
-
-        for _, row in benchmark_df.iterrows():
-
-            technology = (
-                row["Technology"]
-            )
-
-            kpis = row.get(
-                "KPIs",
-                {}
-            )
-
-            if not isinstance(
-                kpis,
-                dict
-            ):
-                continue
-
-            for (
-                kpi_name,
-                kpi_value
-            ) in kpis.items():
-
-                kpi_rows.append({
-
-                    "Technology":
-                        technology,
-
-                    "KPI":
-                        kpi_name,
-
-                    "Value":
-                        kpi_value
-                })
-
-        return pd.DataFrame(
-            kpi_rows
+        benchmark_df = (
+            benchmark_df.copy()
         )
 
-def calculate_payback(
-    self,
-    benchmark_df,
-    baseline_technology
-):
+        baseline_row = benchmark_df[
+            benchmark_df["Technology"]
+            == baseline_technology
+        ]
 
-    benchmark_df = (
-        benchmark_df.copy()
-    )
-
-    baseline_row = benchmark_df[
-        benchmark_df["Technology"]
-        == baseline_technology
-    ]
-
-    if baseline_row.empty:
-        return benchmark_df
-
-    baseline_tooling = 0.0
-
-    if "Tooling Cost" in benchmark_df.columns:
+        if baseline_row.empty:
+            return benchmark_df
 
         baseline_tooling = (
             baseline_row.iloc[0]
-            ["Tooling Cost"]
+            .get(
+                "Tooling Cost",
+                0
+            )
         )
 
-    payback_years = []
+        payback_years = []
 
-    for _, row in benchmark_df.iterrows():
+        for _, row in (
+            benchmark_df.iterrows()
+        ):
 
-        annual_saving = row.get(
-            "Annual Saving",
-            None
-        )
-
-        tooling_cost = row.get(
-            "Tooling Cost",
-            0.0
-        )
-
-        if annual_saving is None:
-
-            payback_years.append(
-                None
+            annual_saving = row.get(
+                "Annual Saving",
+                0
             )
 
-            continue
-
-        if annual_saving <= 0:
-
-            payback_years.append(
-                None
+            tooling_cost = row.get(
+                "Tooling Cost",
+                0
             )
 
-            continue
+            if annual_saving <= 0:
 
-        incremental_investment = max(
-            0.0,
-            tooling_cost
-            - baseline_tooling
-        )
+                payback_years.append(
+                    None
+                )
 
-        payback_years.append(
-            incremental_investment
-            / annual_saving
-        )
+                continue
 
-    benchmark_df[
-        "Payback (Years)"
-    ] = payback_years
+            incremental_investment = max(
+                0,
+                tooling_cost
+                - baseline_tooling
+            )
 
-    benchmark_df[
-        "Payback (Months)"
-    ] = (
+            payback_years.append(
+                incremental_investment
+                / annual_saving
+            )
+
         benchmark_df[
-            "Payback (Years)"
-        ]
-        * 12
-    )
-
-    return benchmark_df
+            "Payback 
