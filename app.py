@@ -319,7 +319,20 @@ elif selected_module == "Process Benchmark":
     st.subheader(
         "Technology Ranking"
     )
+available_technologies = (
+    benchmark_df[
+        "Technology"
+    ].tolist()
+)
 
+baseline_technology = (
+    st.selectbox(
+        "Baseline Technology",
+        available_technologies,
+        index=0
+    )
+)
+    
     st.dataframe(
         benchmark_df,
         use_container_width=True
