@@ -299,6 +299,32 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
+elif selected_module == "Process Benchmark":
+
+    st.header(
+        "Process Benchmark"
+    )
+
+    benchmark_df = (
+        benchmark_engine.run_benchmark(
+            part_weight=part_weight,
+            annual_volume=annual_volume,
+            material_price=material_price,
+            labour_rate=labour_rate,
+            overhead_factor=overhead_factor,
+            technology_inputs={}
+        )
+    )
+
+    st.subheader(
+        "Technology Ranking"
+    )
+
+    st.dataframe(
+        benchmark_df,
+        use_container_width=True
+    )
+        
         cost_results = []
 
         hpdc_kpis = None
