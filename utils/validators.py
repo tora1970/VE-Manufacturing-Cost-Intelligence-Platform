@@ -135,3 +135,31 @@ def validate_non_negative(value, field_name):
         raise ValueError(
             f"{field_name} cannot be negative."
         )
+
+def validate_common_inputs(
+    part_weight,
+    annual_volume,
+    material_price,
+    labour_rate,
+    overhead_factor
+):
+
+    validate_part_weight(
+        part_weight
+    )
+
+    validate_annual_volume(
+        annual_volume
+    )
+
+    validate_material_price(
+        material_price
+    )
+
+    validate_labour_rate(
+        labour_rate
+    )
+
+    validate_overhead_factor(
+        overhead_factor
+    )
