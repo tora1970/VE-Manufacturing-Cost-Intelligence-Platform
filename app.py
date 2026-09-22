@@ -231,16 +231,16 @@ with tab1:
 
             for _, row in recommendations_df.iterrows():
 
-    technology_name = (
-        row["Technology"]
-    )
+                technology_name = (
+                    row["Technology"]
+                )
 
-    mapped_technology = (
-        TECHNOLOGY_MAPPING.get(
-            technology_name,
-            technology_name
-        )
-    )
+                mapped_technology = (
+                    TECHNOLOGY_MAPPING.get(
+                        technology_name,
+                        technology_name
+                    )
+                )
 
     if mapped_technology is None:
 
