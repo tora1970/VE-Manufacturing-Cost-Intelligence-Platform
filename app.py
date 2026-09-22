@@ -6,6 +6,7 @@ from utils.loader import MasterDataLoader
 from engine.technology_engine import TechnologyEngine
 from engine.cost_engine import CostEngine
 
+
 # --------------------------------------------------
 # PAGE SETUP
 # --------------------------------------------------
@@ -17,6 +18,7 @@ st.set_page_config(
 
 st.title("VE Manufacturing Cost Intelligence Platform")
 st.subheader("Technology Selection")
+
 
 # --------------------------------------------------
 # LOAD MASTER DATA
@@ -41,6 +43,7 @@ except Exception as e:
 
     st.stop()
 
+
 # --------------------------------------------------
 # CLEAN COLUMN NAMES
 # --------------------------------------------------
@@ -49,6 +52,7 @@ materials_df.columns = materials_df.columns.str.strip()
 regions_df.columns = regions_df.columns.str.strip()
 rules_df.columns = rules_df.columns.str.strip()
 technology_cost_df.columns = technology_cost_df.columns.str.strip()
+
 
 # --------------------------------------------------
 # ENGINES
@@ -62,20 +66,26 @@ cost_engine = CostEngine(
     technology_cost_df
 )
 
+
 # --------------------------------------------------
 # FORMATTERS
 # --------------------------------------------------
 
 def eur_number(value, decimals=2):
+
     try:
+
         return (
             f"{value:,.{decimals}f}"
             .replace(",", "X")
             .replace(".", ",")
             .replace("X", ".")
         )
+
     except Exception:
+
         return value
+
 
 # --------------------------------------------------
 # INPUT SECTION
@@ -134,6 +144,64 @@ with col2:
         ["Low", "Medium", "High"]
     )
 
+
+# --------------------------------------------------
+# HPDC PROCESS PARAMETERS
+# --------------------------------------------------
+
+with st.expander(
+    "HPDC Process Parameters",
+    expanded=False
+):
+
+    shot_weight_kg = st.number_input(
+        "Shot Weight (kg)",
+        min_value=part_weight,
+        value=round(part_weight * 1.5, 3),
+        step=0.001,
+        format="%.3f"
+    )
+
+    cycle_time_sec = st.number_input(
+        "Cycle Time (sec)",
+        min_value=1.0,
+        value=45.0,
+        step=1.0
+    )
+
+    machine_rate_per_hour = st.number_input(
+        "Machine Rate (EUR/hr)",
+        min_value=0.0,
+        value=75.0,
+        step=1.0
+    )
+
+    tool_cost = st.number_input(
+        "Tool Cost (EUR)",
+        min_value=0.0,
+        value=120000.0,
+        step=1000.0
+    )
+
+    tool_life_shots = st.number_input(
+        "Tool Life (Shots)",
+        min_value=1,
+        value=750000,
+        step=10000
+    )
+
+    scrap_rate = (
+        st.slider(
+            "Scrap Rate (%)",
+            min_value=0.0,
+            max_value=20.0,
+            value=3.0,
+            step=0.5
+        )
+        / 100
+    )
+
+
 # --------------------------------------------------
 # REGION DATA
 # --------------------------------------------------
@@ -153,6 +221,7 @@ overhead_factor = float(
         "Overhead factor"
     ].iloc[0]
 )
+
 
 # --------------------------------------------------
 # INPUT OVERVIEW
@@ -188,6 +257,7 @@ with c4:
         f"€ {eur_number(labour_rate, 2)}/hr"
     )
 
+
 # --------------------------------------------------
 # CALCULATE
 # --------------------------------------------------
@@ -222,11 +292,9 @@ if st.button("Recommend Technology"):
             use_container_width=True
         )
 
-        # ------------------------------------------
-        # COST CALCULATIONS
-        # ------------------------------------------
-
         cost_results = []
+
+        hpdc_kpis = None
 
         for _, row in recommendations_df.iterrows():
 
@@ -240,8 +308,20 @@ if st.button("Recommend Technology"):
                     material_price=material_price,
                     annual_volume=annual_volume,
                     labour_rate=labour_rate,
-                    overhead_factor=overhead_factor
+                    overhead_factor=overhead_factor,
+                    shot_weight_kg=shot_weight_kg,
+                    cycle_time_sec=cycle_time_sec,
+                    machine_rate_per_hour=machine_rate_per_hour,
+                    tool_cost=tool_cost,
+                    tool_life_shots=tool_life_shots,
+                    scrap_rate=scrap_rate
                 )
+
+                if technology_name.upper() == "HPDC":
+                    hpdc_kpis = cost.get(
+                        "KPIs",
+                        {}
+                    )
 
                 cost_results.append(
                     {
@@ -249,7 +329,13 @@ if st.button("Recommend Technology"):
                         "Score": row["Score"],
                         "Material Cost": cost["Material Cost"],
                         "Setup Cost": cost["Setup Cost"],
-                        "Manufacturing Cost": cost["Cycle Cost"],
+                        "Manufacturing Cost": cost.get(
+                            "Manufacturing Cost",
+                            cost.get(
+                                "Cycle Cost",
+                                0
+                            )
+                        ),
                         "Machine Cost": cost["Machine Cost"],
                         "Labour Cost": cost["Labour Cost"],
                         "Overhead Cost": cost["Overhead Cost"],
@@ -303,9 +389,17 @@ if st.button("Recommend Technology"):
             ]
 
             for col in cost_columns:
+
                 if col in display_df.columns:
-                    display_df[col] = display_df[col].apply(
-                        lambda x: eur_number(x, 2)
+
+                    display_df[col] = (
+                        display_df[col]
+                        .apply(
+                            lambda x: eur_number(
+                                x,
+                                2
+                            )
+                        )
                     )
 
             st.dataframe(
@@ -313,9 +407,45 @@ if st.button("Recommend Technology"):
                 use_container_width=True
             )
 
-            # ------------------------------------------
-            # COST BREAKDOWN CHART
-            # ------------------------------------------
+            # --------------------------------------
+            # HPDC KPI DASHBOARD
+            # --------------------------------------
+
+            if hpdc_kpis:
+
+                st.subheader(
+                    "HPDC Process KPIs"
+                )
+
+                k1, k2, k3, k4 = st.columns(4)
+
+                with k1:
+                    st.metric(
+                        "Material Utilization",
+                        f"{hpdc_kpis.get('material_utilization_pct',0):.1f}%"
+                    )
+
+                with k2:
+                    st.metric(
+                        "Yield Loss",
+                        f"{hpdc_kpis.get('yield_loss_pct',0):.1f}%"
+                    )
+
+                with k3:
+                    st.metric(
+                        "Parts/Hour",
+                        f"{hpdc_kpis.get('parts_per_hour',0):.1f}"
+                    )
+
+                with k4:
+                    st.metric(
+                        "Tool Cost/Part",
+                        f"€ {eur_number(hpdc_kpis.get('tool_cost_per_part',0),4)}"
+                    )
+
+            # --------------------------------------
+            # COST BREAKDOWN
+            # --------------------------------------
 
             st.subheader(
                 "Cost Breakdown by Technology"
@@ -326,7 +456,7 @@ if st.button("Recommend Technology"):
                     "Technology",
                     "Material Cost",
                     "Setup Cost",
-                    "Manufacturing Cost",
+                    "Machine Cost",
                     "Labour Cost",
                     "Overhead Cost",
                     "Tooling Cost"
@@ -364,9 +494,9 @@ if st.button("Recommend Technology"):
                 use_container_width=True
             )
 
-            # ------------------------------------------
-            # VALIDATION ISSUES
-            # ------------------------------------------
+            # --------------------------------------
+            # VALIDATION
+            # --------------------------------------
 
             validation_df = cost_df[
                 cost_df["Warnings"] != ""
@@ -395,21 +525,26 @@ if st.button("Recommend Technology"):
                     use_container_width=True
                 )
 
-            # ------------------------------------------
+            # --------------------------------------
             # BEST OPTION
-            # ------------------------------------------
+            # --------------------------------------
 
             best_option = cost_df.iloc[0]
 
-            best_technology = best_option["Technology"]
+            best_technology = (
+                best_option["Technology"]
+            )
 
-            best_cost = best_option["Total Cost"]
+            best_cost = (
+                best_option["Total Cost"]
+            )
 
             st.success(
                 f"""
 Best Technology Option: {best_technology}
 
 Estimated Manufacturing Cost:
+
 € {eur_number(best_cost, 2)}/pc
 """
             )
@@ -419,6 +554,7 @@ Estimated Manufacturing Cost:
         st.error(
             f"Calculation failed: {e}"
         )
+
 
 # --------------------------------------------------
 # DEBUG
