@@ -231,80 +231,86 @@ with tab1:
 
             for _, row in recommendations_df.iterrows():
 
-            technology_name = (
-                row["Technology"]
-            )
+    technology_name = (
+        row["Technology"]
+    )
 
-            mapped_technology = (
-                TECHNOLOGY_MAPPING.get(
+    mapped_technology = (
+        TECHNOLOGY_MAPPING.get(
+            technology_name,
+            technology_name
+        )
+    )
+
+    if mapped_technology is None:
+
+        st.warning(
+            f"{technology_name}: "
+            f"No cost model available yet."
+        )
+
+        continue
+
+    try:
+
+        result = (
+            cost_engine.calculate_cost(
+                technology=mapped_technology,
+                part_weight=part_weight,
+                annual_volume=annual_volume,
+                material_price=material_price,
+                labour_rate=labour_rate,
+                overhead_factor=overhead_factor
+            )
+        )
+
+        cost_results.append(
+            {
+                "Technology":
                     technology_name,
-                    technology_name
-                )
-            )
 
-            if mapped_technology is None:
+                "Score":
+                    row["Score"],
 
-                st.warning(
-                    f"{technology_name}: "
-                    f"No cost model available yet."
-                )
+                "Material Cost":
+                    result["Material Cost"],
 
-                continue
+                "Setup Cost":
+                    result["Setup Cost"],
 
-            try:
+                "Machine Cost":
+                    result["Machine Cost"],
 
-                result = (
-                    cost_engine.calculate_cost(
-                        technology=mapped_technology,
-                        part_weight=part_weight,
-                        annual_volume=annual_volume,
-                        material_price=material_price,
-                        labour_rate=labour_rate,
-                        overhead_factor=overhead_factor
+                "Labour Cost":
+                    result["Labour Cost"],
+
+                "Overhead Cost":
+                    result["Overhead Cost"],
+
+                "Tooling Cost":
+                    result["Tooling Cost"],
+
+                "Manufacturing Cost":
+                    result["Manufacturing Cost"],
+
+                "Total Cost":
+                    result["Total Cost"],
+
+                "Validation Score":
+                    result["Validation Score"],
+
+                "Warnings":
+                    "; ".join(
+                        result["Warnings"]
                     )
-                )
+            }
+        )
 
-                    cost_results.append({
+    except Exception as calc_error:
 
-                        "Technology":
-                            technology_name,
-
-                        "Score":
-                            row["Score"],
-
-                        "Material Cost":
-                            result["Material Cost"],
-
-                        "Setup Cost":
-                            result["Setup Cost"],
-
-                        "Machine Cost":
-                            result["Machine Cost"],
-
-                        "Labour Cost":
-                            result["Labour Cost"],
-
-                        "Overhead Cost":
-                            result["Overhead Cost"],
-
-                        "Tooling Cost":
-                            result["Tooling Cost"],
-
-                        "Manufacturing Cost":
-                            result["Manufacturing Cost"],
-
-                        "Total Cost":
-                            result["Total Cost"],
-
-                        "Validation Score":
-                            result["Validation Score"],
-
-                        "Warnings":
-                            "; ".join(
-                                result["Warnings"]
-                            )
-                    })
-
+        st.warning(
+            f"{technology_name}: {calc_error}"
+        )
                 except Exception as calc_error:
 
                     st.warning(
