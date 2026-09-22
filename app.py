@@ -237,4 +237,4 @@ elif selected_module == "Process Benchmark":
             benchmark_engine
             .calculate_savings(
                 benchmark_df,
-           
+            )
