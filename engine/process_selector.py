@@ -1,44 +1,72 @@
-from manufacturing_model.hpdc import (
-    HPDCInputs,
-    HPDCModel
-)
+from manufacturing_model.hpdc import HPDCModel
+from manufacturing_model.injection_molding import InjectionMoldingModel
+from manufacturing_model.sand_casting import SandCastingModel
+from manufacturing_model.cnc import CNCModel
+from manufacturing_model.machining import MachiningModel
+from manufacturing_model.sheet_metal import SheetMetalModel
+
+
+PROCESS_MAP = {
+
+    "HPDC": HPDCModel,
+
+    "Injection Molding": InjectionMoldingModel,
+
+    "Sand Casting": SandCastingModel,
+
+    "CNC": CNCModel,
+
+    "Machining": MachiningModel,
+
+    "Sheet Metal": SheetMetalModel,
+}
 
 
 class ProcessSelector:
 
     @staticmethod
-    def calculate(
-        technology: str,
-        process_inputs: dict
+    def get_model(
+        technology: str
     ):
+        """
+        Returns instantiated manufacturing model.
+        """
 
-        technology = technology.upper()
+        model_class = PROCESS_MAP.get(
+            technology
+        )
 
-        if technology == "HPDC":
+        if model_class is None:
 
-            inputs = HPDCInputs(
-                part_weight_kg=process_inputs["part_weight_kg"],
-                shot_weight_kg=process_inputs["shot_weight_kg"],
-                material_price_per_kg=process_inputs["material_price_per_kg"],
-                cycle_time_sec=process_inputs["cycle_time_sec"],
-                machine_rate_per_hour=process_inputs["machine_rate_per_hour"],
-                labour_rate_per_hour=process_inputs["labour_rate_per_hour"],
-                tool_cost=process_inputs["tool_cost"],
-                tool_life_shots=process_inputs["tool_life_shots"],
-                scrap_rate=process_inputs.get(
-                    "scrap_rate",
-                    0.03
-                ),
-                overhead_factor=process_inputs.get(
-                    "overhead_factor",
-                    0.15
-                )
+            available = ", ".join(
+                PROCESS_MAP.keys()
             )
 
-            return HPDCModel(
-                inputs
-            ).calculate()
+            raise ValueError(
+                f"Unsupported technology: "
+                f"{technology}. "
+                f"Available technologies: "
+                f"{available}"
+            )
 
-        raise ValueError(
-            f"Technology '{technology}' not implemented."
+        return model_class()
+
+    @staticmethod
+    def get_available_technologies():
+        """
+        Returns available process technologies.
+        """
+
+        return sorted(
+            PROCESS_MAP.keys()
         )
+
+    @staticmethod
+    def technology_exists(
+        technology: str
+    ):
+        """
+        Check if technology is supported.
+        """
+
+        return technology in PROCESS_MAP
