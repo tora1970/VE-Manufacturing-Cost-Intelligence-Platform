@@ -70,8 +70,13 @@ class ProcessBenchmark:
 
                     "Annual Cost":
                         total_cost
-                        * annual_volume
+                        * annual_volume,
 
+                    "KPIs":
+                        cost_result.get(
+                            "KPIs",
+                            {}
+                        )
                 })
 
             except Exception:
@@ -187,3 +192,51 @@ class ProcessBenchmark:
             return None
 
         return benchmark_df.iloc[0]
+
+    def create_kpi_comparison(
+        self,
+        benchmark_df
+    ):
+
+        if benchmark_df.empty:
+            return pd.DataFrame()
+
+        kpi_rows = []
+
+        for _, row in benchmark_df.iterrows():
+
+            technology = (
+                row["Technology"]
+            )
+
+            kpis = row.get(
+                "KPIs",
+                {}
+            )
+
+            if not isinstance(
+                kpis,
+                dict
+            ):
+                continue
+
+            for (
+                kpi_name,
+                kpi_value
+            ) in kpis.items():
+
+                kpi_rows.append({
+
+                    "Technology":
+                        technology,
+
+                    "KPI":
+                        kpi_name,
+
+                    "Value":
+                        kpi_value
+                })
+
+        return pd.DataFrame(
+            kpi_rows
+        )
