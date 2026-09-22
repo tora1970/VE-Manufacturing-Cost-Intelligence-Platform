@@ -48,9 +48,7 @@ except Exception as e:
 materials_df.columns = materials_df.columns.str.strip()
 regions_df.columns = regions_df.columns.str.strip()
 rules_df.columns = rules_df.columns.str.strip()
-technology_cost_df.columns = (
-    technology_cost_df.columns.str.strip()
-)
+technology_cost_df.columns = technology_cost_df.columns.str.strip()
 
 # --------------------------------------------------
 # ENGINES
@@ -63,6 +61,21 @@ technology_engine = TechnologyEngine(
 cost_engine = CostEngine(
     technology_cost_df
 )
+
+# --------------------------------------------------
+# FORMATTERS
+# --------------------------------------------------
+
+def eur_number(value, decimals=2):
+    try:
+        return (
+            f"{value:,.{decimals}f}"
+            .replace(",", "X")
+            .replace(".", ",")
+            .replace("X", ".")
+        )
+    except Exception:
+        return value
 
 # --------------------------------------------------
 # INPUT SECTION
@@ -160,19 +173,19 @@ with c1:
 with c2:
     st.metric(
         "Volume",
-        f"{annual_volume:,.0f}"
+        eur_number(annual_volume, 0)
     )
 
 with c3:
     st.metric(
         "Material Price",
-        f"€ {material_price:.2f}/kg"
+        f"€ {eur_number(material_price, 2)}/kg"
     )
 
 with c4:
     st.metric(
         "Labour Rate",
-        f"€ {labour_rate:.2f}/hr"
+        f"€ {eur_number(labour_rate, 2)}/hr"
     )
 
 # --------------------------------------------------
@@ -234,14 +247,14 @@ if st.button("Recommend Technology"):
                     {
                         "Technology": technology_name,
                         "Score": row["Score"],
-                        "Material Cost EUR": cost["Material Cost"],
-                        "Setup Cost EUR": cost["Setup Cost"],
-                        "Cycle Cost EUR": cost["Cycle Cost"],
-                        "Machine Cost EUR": cost["Machine Cost"],
-                        "Labour Cost EUR": cost["Labour Cost"],
-                        "Overhead Cost EUR": cost["Overhead Cost"],
-                        "Tooling Cost EUR": cost["Tooling Cost"],
-                        "Total Cost EUR/pc": cost["Total Cost"],
+                        "Material Cost": cost["Material Cost"],
+                        "Setup Cost": cost["Setup Cost"],
+                        "Manufacturing Cost": cost["Cycle Cost"],
+                        "Machine Cost": cost["Machine Cost"],
+                        "Labour Cost": cost["Labour Cost"],
+                        "Overhead Cost": cost["Overhead Cost"],
+                        "Tooling Cost": cost["Tooling Cost"],
+                        "Total Cost": cost["Total Cost"],
                         "Validation Score": cost["Validation Score"],
                         "Warnings": "; ".join(
                             cost["Warnings"]
@@ -268,7 +281,7 @@ if st.button("Recommend Technology"):
             )
 
             cost_df = cost_df.sort_values(
-                by="Total Cost EUR/pc",
+                by="Total Cost",
                 ascending=True
             )
 
@@ -276,8 +289,27 @@ if st.button("Recommend Technology"):
                 "Technology Cost Comparison"
             )
 
+            display_df = cost_df.copy()
+
+            cost_columns = [
+                "Material Cost",
+                "Setup Cost",
+                "Manufacturing Cost",
+                "Machine Cost",
+                "Labour Cost",
+                "Overhead Cost",
+                "Tooling Cost",
+                "Total Cost"
+            ]
+
+            for col in cost_columns:
+                if col in display_df.columns:
+                    display_df[col] = display_df[col].apply(
+                        lambda x: eur_number(x, 2)
+                    )
+
             st.dataframe(
-                cost_df,
+                display_df,
                 use_container_width=True
             )
 
@@ -292,12 +324,12 @@ if st.button("Recommend Technology"):
             chart_df = cost_df[
                 [
                     "Technology",
-                    "Material Cost EUR",
-                    "Setup Cost EUR",
-                    "Cycle Cost EUR",
-                    "Labour Cost EUR",
-                    "Overhead Cost EUR",
-                    "Tooling Cost EUR"
+                    "Material Cost",
+                    "Setup Cost",
+                    "Manufacturing Cost",
+                    "Labour Cost",
+                    "Overhead Cost",
+                    "Tooling Cost"
                 ]
             ].copy()
 
@@ -318,7 +350,7 @@ if st.button("Recommend Technology"):
                     ),
                     x=alt.X(
                         "sum(Cost):Q",
-                        title="Cost (EUR/pc)"
+                        title="Cost"
                     ),
                     color="Cost Element:N"
                 )
@@ -369,20 +401,16 @@ if st.button("Recommend Technology"):
 
             best_option = cost_df.iloc[0]
 
-            best_technology = (
-                best_option["Technology"]
-            )
+            best_technology = best_option["Technology"]
 
-            best_cost = (
-                best_option["Total Cost EUR/pc"]
-            )
+            best_cost = best_option["Total Cost"]
 
             st.success(
                 f"""
 Best Technology Option: {best_technology}
 
 Estimated Manufacturing Cost:
-€ {best_cost:.2f}/pc
+€ {eur_number(best_cost, 2)}/pc
 """
             )
 
