@@ -87,8 +87,4 @@ class BaseManufacturingModel(ABC):
         overhead_factor,
         **kwargs
     ):
-        """
-        Must be implemented by all manufacturing models.
-        """
         pass
-``
