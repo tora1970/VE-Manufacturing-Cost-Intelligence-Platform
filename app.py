@@ -83,6 +83,19 @@ benchmark_engine = ProcessBenchmark(
 )
 
 # ==================================================
+# TECHNOLOGY MAPPING
+# ==================================================
+
+TECHNOLOGY_MAPPING = {
+
+    "CNC Machining": "CNC",
+
+    "Die Casting": "HPDC",
+
+    "HP Multi Jet Fusion": None,
+}
+
+# ==================================================
 # COMMON INPUTS
 # ==================================================
 
@@ -218,22 +231,38 @@ with tab1:
 
             for _, row in recommendations_df.iterrows():
 
-                technology_name = (
-                    row["Technology"]
-                )
+    technology_name = (
+        row["Technology"]
+    )
 
-                try:
+    mapped_technology = (
+        TECHNOLOGY_MAPPING.get(
+            technology_name,
+            technology_name
+        )
+    )
 
-                    result = (
-                        cost_engine.calculate_cost(
-                            technology=technology_name,
-                            part_weight=part_weight,
-                            annual_volume=annual_volume,
-                            material_price=material_price,
-                            labour_rate=labour_rate,
-                            overhead_factor=overhead_factor
-                        )
-                    )
+    if mapped_technology is None:
+
+        st.warning(
+            f"{technology_name}: "
+            f"No cost model available yet."
+        )
+
+        continue
+
+    try:
+
+        result = (
+            cost_engine.calculate_cost(
+                technology=mapped_technology,
+                part_weight=part_weight,
+                annual_volume=annual_volume,
+                material_price=material_price,
+                labour_rate=labour_rate,
+                overhead_factor=overhead_factor
+            )
+        )
 
                     cost_results.append({
 
