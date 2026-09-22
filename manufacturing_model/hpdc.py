@@ -22,9 +22,6 @@ class HPDCInputs:
 
 
 class HPDCModel:
-    """
-    High Pressure Die Casting Process-Based Cost Model
-    """
 
     def __init__(self, inputs: HPDCInputs):
         self.i = inputs
@@ -70,13 +67,9 @@ class HPDCModel:
                 "overhead_factor cannot be negative"
             )
 
-    def calculate(self) -> Dict[str, Any\]:
+    def calculate(self) -> Dict[str, Any]:
 
         self.validate()
-
-        # ------------------------------------------
-        # Material
-        # ------------------------------------------
 
         gross_material_cost = (
             self.i.shot_weight_kg
@@ -88,54 +81,31 @@ class HPDCModel:
             / (1 - self.i.scrap_rate)
         )
 
-        # ------------------------------------------
-        # Time
-        # ------------------------------------------
-
         cycle_time_hr = (
-            self.i.cycle_time_sec / 3600
+            self.i.cycle_time_sec
+            / 3600
         )
-
-        # ------------------------------------------
-        # Machine
-        # ------------------------------------------
 
         machine_cost = (
             cycle_time_hr
             * self.i.machine_rate_per_hour
         )
 
-        # ------------------------------------------
-        # Labour
-        # ------------------------------------------
-
         labour_cost = (
             cycle_time_hr
             * self.i.labour_rate_per_hour
         )
-
-        # ------------------------------------------
-        # Tooling
-        # ------------------------------------------
 
         tooling_cost = (
             self.i.tool_cost
             / self.i.tool_life_shots
         )
 
-        # ------------------------------------------
-        # Overhead
-        # ------------------------------------------
-
         overhead_cost = (
             material_cost
             + machine_cost
             + labour_cost
         ) * self.i.overhead_factor
-
-        # ------------------------------------------
-        # Total
-        # ------------------------------------------
 
         total_cost = (
             material_cost
@@ -144,10 +114,6 @@ class HPDCModel:
             + tooling_cost
             + overhead_cost
         )
-
-        # ------------------------------------------
-        # KPIs
-        # ------------------------------------------
 
         material_utilization = (
             self.i.part_weight_kg
@@ -163,81 +129,18 @@ class HPDCModel:
             / self.i.cycle_time_sec
         )
 
-        material_share = (
-            material_cost / total_cost
-            if total_cost > 0
-            else 0
-        )
-
-        machine_share = (
-            machine_cost / total_cost
-            if total_cost > 0
-            else 0
-        )
-
-        labour_share = (
-            labour_cost / total_cost
-            if total_cost > 0
-            else 0
-        )
-
-        tooling_share = (
-            tooling_cost / total_cost
-            if total_cost > 0
-            else 0
-        )
-
-        overhead_share = (
-            overhead_cost / total_cost
-            if total_cost > 0
-            else 0
-        )
-
         return {
             "technology": "HPDC",
 
-            "material_cost": round(
-                material_cost,
-                4
-            ),
+            "material_cost": material_cost,
+            "machine_cost": machine_cost,
+            "labour_cost": labour_cost,
+            "tooling_cost": tooling_cost,
+            "overhead_cost": overhead_cost,
 
-            "machine_cost": round(
-                machine_cost,
-                4
-            ),
-
-            "labour_cost": round(
-                labour_cost,
-                4
-            ),
-
-            "tooling_cost": round(
-                tooling_cost,
-                4
-            ),
-
-            "overhead_cost": round(
-                overhead_cost,
-                4
-            ),
-
-            "total_cost": round(
-                total_cost,
-                4
-            ),
+            "total_cost": total_cost,
 
             "kpis": {
-
-                "part_weight_kg": round(
-                    self.i.part_weight_kg,
-                    4
-                ),
-
-                "shot_weight_kg": round(
-                    self.i.shot_weight_kg,
-                    4
-                ),
-
                 "material_utilization_pct": round(
                     material_utilization * 100,
                     2
@@ -248,7 +151,7 @@ class HPDCModel:
                     2
                 ),
 
-                "partsper_hour": round(
+                "parts_per_hour": round(
                     parts_per_hour,
                     1
                 ),
@@ -256,31 +159,6 @@ class HPDCModel:
                 "tool_cost_per_part": round(
                     tooling_cost,
                     4
-                ),
-
-                "material_share_pct": round(
-                    material_share * 100,
-                    2
-                ),
-
-                "machine_share_pct": round(
-                    machine_share * 100,
-                    2
-                ),
-
-                "labour_share_pct": round(
-                    labour_share * 100,
-                    2
-                ),
-
-                "tooling_share_pct": round(
-                    tooling_share * 100,
-                    2
-                ),
-
-                "overhead_share_pct": round(
-                    overhead_share * 100,
-                    2
                 )
             }
         }
