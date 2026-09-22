@@ -61,6 +61,10 @@ technology_cost_df.columns = technology_cost_df.columns.str.strip()
 # ENGINES
 # --------------------------------------------------
 
+benchmark_engine = ProcessBenchmark(
+    technology_cost_df
+)
+
 technology_engine = TechnologyEngine(
     rules_df
 )
