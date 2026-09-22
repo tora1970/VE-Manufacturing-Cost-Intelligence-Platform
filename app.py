@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 
 from utils.loader import MasterDataLoader
 
@@ -9,9 +10,9 @@ from engine.cost_engine import CostEngine
 from modules.process_benchmark import ProcessBenchmark
 
 
-# --------------------------------------------------
+# ==================================================
 # PAGE SETUP
-# --------------------------------------------------
+# ==================================================
 
 st.set_page_config(
     page_title="VE Manufacturing Cost Intelligence Platform",
@@ -22,10 +23,9 @@ st.title(
     "VE Manufacturing Cost Intelligence Platform (VECIP)"
 )
 
-
-# --------------------------------------------------
+# ==================================================
 # LOAD MASTER DATA
-# --------------------------------------------------
+# ==================================================
 
 try:
 
@@ -43,12 +43,12 @@ except Exception as e:
     st.error(
         f"Failed to load master data: {e}"
     )
+
     st.stop()
 
-
-# --------------------------------------------------
+# ==================================================
 # CLEAN COLUMN NAMES
-# --------------------------------------------------
+# ==================================================
 
 materials_df.columns = (
     materials_df.columns.str.strip()
@@ -66,10 +66,9 @@ technology_cost_df.columns = (
     technology_cost_df.columns.str.strip()
 )
 
-
-# --------------------------------------------------
+# ==================================================
 # ENGINES
-# --------------------------------------------------
+# ==================================================
 
 technology_engine = TechnologyEngine(
     rules_df
@@ -83,10 +82,9 @@ benchmark_engine = ProcessBenchmark(
     technology_cost_df
 )
 
-
-# --------------------------------------------------
+# ==================================================
 # COMMON INPUTS
-# --------------------------------------------------
+# ==================================================
 
 st.header(
     "Part Inputs"
@@ -134,20 +132,18 @@ with col3:
         ]
     )
 
-
 selected_material = materials_df[
     materials_df["Material_Name"] == material
 ]
 
+material_group = (
+    selected_material["Material_Group"]
+    .iloc[0]
+)
+
 material_price = float(
     selected_material[
         "Default_Price_EUR_kg"
-    ].iloc[0]
-)
-
-material_group = (
-    selected_material[
-        "Material_Group"
     ].iloc[0]
 )
 
@@ -167,214 +163,345 @@ overhead_factor = float(
     ].iloc[0]
 )
 
-
-# --------------------------------------------------
-# INPUT SUMMARY
-# --------------------------------------------------
-
-st.divider()
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-
-    st.metric(
-        "Weight",
-        f"{part_weight:.3f} kg"
-    )
-
-with c2:
-
-    st.metric(
-        "Annual Volume",
-        f"{annual_volume:,.0f}"
-    )
-
-with c3:
-
-    st.metric(
-        "Material Price",
-        f"€ {material_price:.2f}/kg"
-    )
-
-with c4:
-
-    st.metric(
-        "Labour Rate",
-        f"€ {labour_rate:.2f}/hr"
-    )
-
-
 # ==================================================
-# TECHNOLOGY RECOMMENDATION
+# TABS
 # ==================================================
 
-st.divider()
-
-st.header(
-    "Technology Recommendation"
+tab1, tab2, tab3, tab4 = st.tabs(
+    [
+        "Technology Selection",
+        "Process Benchmark",
+        "Design-to-Cost",
+        "VE Opportunity Finder"
+    ]
 )
 
-if st.button(
-    "Recommend Technology"
-):
-
-    try:
-
-        recommendations = (
-            technology_engine.recommend(
-                weight=part_weight,
-                volume=annual_volume,
-                material=material_group,
-                complexity=complexity
-            )
-        )
-
-        recommendations_df = pd.DataFrame(
-            recommendations
-        )
-
-        st.dataframe(
-            recommendations_df,
-            use_container_width=True
-        )
-
-    except Exception as e:
-
-        st.error(
-            f"Recommendation failed: {e}"
-        )
-
-
 # ==================================================
-# PROCESS BENCHMARK
+# TAB 1 - TECHNOLOGY SELECTION
 # ==================================================
 
-st.divider()
+with tab1:
 
-st.header(
-    "Process Benchmark"
-)
+    st.header(
+        "Technology Recommendation"
+    )
 
-if st.button(
-    "Run Benchmark"
-):
+    if st.button(
+        "Recommend Technology"
+    ):
 
-    try:
+        try:
 
-        benchmark_df = (
-            benchmark_engine.run_benchmark(
-                part_weight=part_weight,
-                annual_volume=annual_volume,
-                material_price=material_price,
-                labour_rate=labour_rate,
-                overhead_factor=overhead_factor
-            )
-        )
-
-        if benchmark_df.empty:
-
-            st.warning(
-                "No benchmark results generated."
-            )
-
-        else:
-
-            st.subheader(
-                "Technology Ranking"
-            )
-
-            st.dataframe(
-                benchmark_df,
-                use_container_width=True
-            )
-
-            baseline_technology = (
-                st.selectbox(
-                    "Baseline Technology",
-                    benchmark_df[
-                        "Technology"
-                    ].tolist()
+            recommendations = (
+                technology_engine.recommend(
+                    weight=part_weight,
+                    volume=annual_volume,
+                    material=material_group,
+                    complexity=complexity
                 )
             )
 
-            benchmark_df = (
-                benchmark_engine.calculate_savings(
-                    benchmark_df,
-                    baseline_technology
-                )
-            )
-
-            benchmark_df = (
-                benchmark_engine.calculate_annual_savings(
-                    benchmark_df,
-                    annual_volume
-                )
+            recommendations_df = pd.DataFrame(
+                recommendations
             )
 
             st.subheader(
-                "Savings Analysis"
+                "Recommended Technologies"
             )
 
             st.dataframe(
-                benchmark_df,
+                recommendations_df,
                 use_container_width=True
             )
 
-            best_option = (
-                benchmark_engine.get_best_technology(
-                    benchmark_df
-                )
-            )
+            cost_results = []
 
-            if best_option is not None:
+            for _, row in recommendations_df.iterrows():
+
+                technology_name = (
+                    row["Technology"]
+                )
+
+                try:
+
+                    result = (
+                        cost_engine.calculate_cost(
+                            technology=technology_name,
+                            part_weight=part_weight,
+                            annual_volume=annual_volume,
+                            material_price=material_price,
+                            labour_rate=labour_rate,
+                            overhead_factor=overhead_factor
+                        )
+                    )
+
+                    cost_results.append({
+
+                        "Technology":
+                            technology_name,
+
+                        "Score":
+                            row["Score"],
+
+                        "Material Cost":
+                            result["Material Cost"],
+
+                        "Setup Cost":
+                            result["Setup Cost"],
+
+                        "Machine Cost":
+                            result["Machine Cost"],
+
+                        "Labour Cost":
+                            result["Labour Cost"],
+
+                        "Overhead Cost":
+                            result["Overhead Cost"],
+
+                        "Tooling Cost":
+                            result["Tooling Cost"],
+
+                        "Manufacturing Cost":
+                            result["Manufacturing Cost"],
+
+                        "Total Cost":
+                            result["Total Cost"],
+
+                        "Validation Score":
+                            result["Validation Score"],
+
+                        "Warnings":
+                            "; ".join(
+                                result["Warnings"]
+                            )
+                    })
+
+                except Exception as calc_error:
+
+                    st.warning(
+                        f"{technology_name}: {calc_error}"
+                    )
+
+            if len(cost_results) > 0:
+
+                cost_df = pd.DataFrame(
+                    cost_results
+                )
+
+                cost_df = cost_df.sort_values(
+                    by="Total Cost",
+                    ascending=True
+                )
+
+                st.subheader(
+                    "Technology Cost Comparison"
+                )
+
+                st.dataframe(
+                    cost_df,
+                    use_container_width=True
+                )
+
+                # ----------------------------------
+                # COST BREAKDOWN CHART
+                # ----------------------------------
+
+                st.subheader(
+                    "Cost Breakdown"
+                )
+
+                chart_df = pd.melt(
+                    cost_df[
+                        [
+                            "Technology",
+                            "Material Cost",
+                            "Setup Cost",
+                            "Machine Cost",
+                            "Labour Cost",
+                            "Overhead Cost",
+                            "Tooling Cost"
+                        ]
+                    ],
+                    id_vars=["Technology"],
+                    var_name="Cost Element",
+                    value_name="Cost"
+                )
+
+                chart = (
+                    alt.Chart(chart_df)
+                    .mark_bar()
+                    .encode(
+                        y=alt.Y(
+                            "Technology:N",
+                            title=None
+                        ),
+                        x=alt.X(
+                            "sum(Cost):Q",
+                            title="Cost (€)"
+                        ),
+                        color="Cost Element:N"
+                    )
+                    .properties(
+                        height=400
+                    )
+                )
+
+                st.altair_chart(
+                    chart,
+                    use_container_width=True
+                )
+
+                # ----------------------------------
+                # VALIDATION
+                # ----------------------------------
+
+                validation_df = cost_df[
+                    cost_df["Warnings"] != ""
+                ]
+
+                st.subheader(
+                    "Validation"
+                )
+
+                if validation_df.empty:
+
+                    st.success(
+                        "No validation issues detected."
+                    )
+
+                else:
+
+                    st.dataframe(
+                        validation_df[
+                            [
+                                "Technology",
+                                "Validation Score",
+                                "Warnings"
+                            ]
+                        ],
+                        use_container_width=True
+                    )
+
+                # ----------------------------------
+                # BEST OPTION
+                # ----------------------------------
+
+                best_option = cost_df.iloc[0]
 
                 st.success(
                     f"""
 Best Technology: {best_option['Technology']}
 
-Cost Per Part: € {best_option['Cost Per Part']:.2f}
-
-Annual Cost: € {best_option['Annual Cost']:.0f}
+Estimated Cost:
+€ {best_option['Total Cost']:.2f}/pc
 """
                 )
 
-    except Exception as e:
+        except Exception as e:
 
-        st.error(
-            f"Benchmark failed: {e}"
-        )
-
-
-# ==================================================
-# DESIGN TO COST
-# ==================================================
-
-st.divider()
-
-st.header(
-    "Design-to-Cost"
-)
-
-st.info(
-    "Module under development."
-)
-
+            st.error(
+                f"Recommendation failed: {e}"
+            )
 
 # ==================================================
-# VE OPPORTUNITY FINDER
+# TAB 2 - PROCESS BENCHMARK
 # ==================================================
 
-st.divider()
+with tab2:
 
-st.header(
-    "VE Opportunity Finder"
-)
+    st.header(
+        "Process Benchmark"
+    )
 
-st.info(
-    "Module under development."
-)
+    if st.button(
+        "Run Benchmark"
+    ):
 
+        try:
+
+            benchmark_df = (
+                benchmark_engine.run_benchmark(
+                    part_weight=part_weight,
+                    annual_volume=annual_volume,
+                    material_price=material_price,
+                    labour_rate=labour_rate,
+                    overhead_factor=overhead_factor
+                )
+            )
+
+            st.dataframe(
+                benchmark_df,
+                use_container_width=True
+            )
+
+            if not benchmark_df.empty:
+
+                baseline_technology = (
+                    st.selectbox(
+                        "Baseline Technology",
+                        benchmark_df[
+                            "Technology"
+                        ].tolist(),
+                        key="benchmark_baseline"
+                    )
+                )
+
+                benchmark_df = (
+                    benchmark_engine.calculate_savings(
+                        benchmark_df,
+                        baseline_technology
+                    )
+                )
+
+                benchmark_df = (
+                    benchmark_engine.calculate_annual_savings(
+                        benchmark_df,
+                        annual_volume
+                    )
+                )
+
+                st.subheader(
+                    "Savings Analysis"
+                )
+
+                st.dataframe(
+                    benchmark_df,
+                    use_container_width=True
+                )
+
+        except Exception as e:
+
+            st.error(
+                f"Benchmark failed: {e}"
+            )
+
+# ==================================================
+# TAB 3 - DESIGN TO COST
+# ==================================================
+
+with tab3:
+
+    st.header(
+        "Design-to-Cost"
+    )
+
+    st.info(
+        "Module under development."
+    )
+
+# ==================================================
+# TAB 4 - OPPORTUNITY FINDER
+# ==================================================
+
+with tab4:
+
+    st.header(
+        "VE Opportunity Finder"
+    )
+
+    st.info(
+        "Module under development."
+    )
 
 # ==================================================
 # DEBUG
@@ -385,17 +512,5 @@ with st.expander(
 ):
 
     st.write(
-        "Loaded datasets:"
-    )
-
-    st.write(
         list(masterdata.keys())
-    )
-
-    st.write(
-        "Technology Cost Library Columns:"
-    )
-
-    st.write(
-        technology_cost_df.columns.tolist()
     )
