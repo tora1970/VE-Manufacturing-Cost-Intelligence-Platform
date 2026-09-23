@@ -1,7 +1,6 @@
 import pandas as pd
 
-from services.process_selector import ProcessSelector
-
+from services.model_dispatcher import ModelDispatcher
 
 class CostEngine:
 
@@ -27,8 +26,8 @@ class CostEngine:
 
         if str(technology).strip().upper() == "HPDC":
 
-            hpdc_result = ProcessSelector.calculate(
-                technology="HPDC",
+        hpdc_result = ModelDispatcher.calculate(  
+            technology="HPDC",
                 process_inputs={
                     "part_weight_kg": weight,
 
