@@ -26,7 +26,7 @@ class CostEngine:
 
         if str(technology).strip().upper() == "HPDC":
 
-        hpdc_result = ModelDispatcher.calculate(  
+            hpdc_result = ModelDispatcher.calculate(  
             technology="HPDC",
                 process_inputs={
                     "part_weight_kg": weight,
