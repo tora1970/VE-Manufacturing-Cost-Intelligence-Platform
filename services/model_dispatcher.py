@@ -3,6 +3,11 @@ from manufacturing_model.hpdc import (
     HPDCModel
 )
 
+from manufacturing_model.injection_molding import (
+    InjectionMoldingInputs,
+    InjectionMoldingModel
+)
+
 
 class ModelDispatcher:
 
@@ -36,6 +41,31 @@ class ModelDispatcher:
             )
 
             return HPDCModel(
+                inputs
+            ).calculate()
+
+        if technology == "INJECTION_MOLDING":
+
+            inputs = InjectionMoldingInputs(
+                part_weight_kg=process_inputs["part_weight_kg"],
+                runner_weight_kg=process_inputs["runner_weight_kg"],
+                material_price_per_kg=process_inputs["material_price_per_kg"],
+                cycle_time_sec=process_inputs["cycle_time_sec"],
+                machine_rate_per_hour=process_inputs["machine_rate_per_hour"],
+                labour_rate_per_hour=process_inputs["labour_rate_per_hour"],
+                tool_cost=process_inputs["tool_cost"],
+                tool_life_cycles=process_inputs["tool_life_cycles"],
+                scrap_rate=process_inputs.get(
+                    "scrap_rate",
+                    0.03
+                ),
+                overhead_factor=process_inputs.get(
+                    "overhead_factor",
+                    0.15
+                )
+            )
+
+            return InjectionMoldingModel(
                 inputs
             ).calculate()
 
