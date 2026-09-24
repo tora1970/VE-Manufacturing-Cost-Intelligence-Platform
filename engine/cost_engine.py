@@ -2,6 +2,7 @@ import pandas as pd
 
 from services.model_dispatcher import ModelDispatcher
 
+
 class CostEngine:
 
     def __init__(self, technology_cost_df):
@@ -26,7 +27,7 @@ class CostEngine:
 
         if str(technology).strip().upper() == "HPDC":
 
-            hpdc_result = ModelDispatcher.calculate(  
+            hpdc_result = ModelDispatcher.calculate(
             technology="HPDC",
                 process_inputs={
                     "part_weight_kg": weight,
@@ -125,6 +126,126 @@ class CostEngine:
                 "Warnings": [],
 
                 "KPIs": hpdc_result.get(
+                    "kpis",
+                    {}
+                )
+            }
+
+        # ==================================================
+        # INJECTION MOLDING PROCESS MODEL
+        # ==================================================
+
+        normalized_technology = (
+            str(technology)
+            .strip()
+            .upper()
+            .replace(" ", "_")
+        )
+
+        if normalized_technology in {
+            "INJECTION_MOULDING",
+            "INJECTION_MOLDING"
+        }:
+
+            injection_molding_result = ModelDispatcher.calculate(
+                technology="INJECTION_MOLDING",
+                process_inputs={
+                    "part_weight_kg": weight,
+
+                    "runner_weight_kg": kwargs.get(
+                        "runner_weight_kg",
+                        weight * 0.20
+                    ),
+
+                    "material_price_per_kg": material_price,
+
+                    "cycle_time_sec": kwargs.get(
+                        "cycle_time_sec",
+                        30.0
+                    ),
+
+                    "machine_rate_per_hour": kwargs.get(
+                        "machine_rate_per_hour",
+                        65.0
+                    ),
+
+                    "labour_rate_per_hour": labour_rate,
+
+                    "tool_cost": kwargs.get(
+                        "tool_cost",
+                        80000.0
+                    ),
+
+                    "tool_life_cycles": kwargs.get(
+                        "tool_life_cycles",
+                        500000
+                    ),
+
+                    "scrap_rate": kwargs.get(
+                        "scrap_rate",
+                        0.03
+                    ),
+
+                    "overhead_factor": (
+                        overhead_factor - 1
+                        if overhead_factor > 1
+                        else overhead_factor
+                    )
+                }
+            )
+
+            return {
+                "Technology": "Injection Molding",
+
+                "Material Cost": round(
+                    injection_molding_result["material_cost"],
+                    2
+                ),
+
+                "Setup Cost": 0.0,
+
+                "Cycle Cost": round(
+                    injection_molding_result["machine_cost"]
+                    + injection_molding_result["labour_cost"],
+                    2
+                ),
+
+                "Manufacturing Cost": round(
+                    injection_molding_result["machine_cost"]
+                    + injection_molding_result["labour_cost"],
+                    2
+                ),
+
+                "Machine Cost": round(
+                    injection_molding_result["machine_cost"],
+                    2
+                ),
+
+                "Labour Cost": round(
+                    injection_molding_result["labour_cost"],
+                    2
+                ),
+
+                "Overhead Cost": round(
+                    injection_molding_result["overhead_cost"],
+                    2
+                ),
+
+                "Tooling Cost": round(
+                    injection_molding_result["tooling_cost"],
+                    2
+                ),
+
+                "Total Cost": round(
+                    injection_molding_result["total_cost"],
+                    2
+                ),
+
+                "Validation Score": 100,
+
+                "Warnings": [],
+
+                "KPIs": injection_molding_result.get(
                     "kpis",
                     {}
                 )
